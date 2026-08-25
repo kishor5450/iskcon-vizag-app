@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { AnnouncementService } from './announcement.service';
-import { AnnouncementEntity } from '../../entities/announcement.entity';
-import { IAnnouncement } from '@temple/models';
+import { IAnnouncement, ICreateAnnouncementRequest } from '@temple/models';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('announcements')
@@ -18,7 +17,7 @@ export class AnnouncementController {
   }
 
   @Post()
-  async create(@Body() dto: Partial<AnnouncementEntity>): Promise<IAnnouncement> {
+  async create(@Body() dto: ICreateAnnouncementRequest): Promise<IAnnouncement> {
     return this.announcementService.create(dto);
   }
 }

@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SevaOpportunityEntity } from '../../entities/seva-opportunity.entity';
-import { ISevaOpportunity } from '@temple/models';
+import { ISevaOpportunity, ICreateSevaRequest } from '@temple/models';
 
 @Injectable()
 export class SevaService implements OnModuleInit {
@@ -21,7 +21,7 @@ export class SevaService implements OnModuleInit {
     });
   }
 
-  async create(dto: Partial<SevaOpportunityEntity>): Promise<ISevaOpportunity> {
+  async create(dto: ICreateSevaRequest): Promise<ISevaOpportunity> {
     const item = this.sevaRepository.create(dto);
     return this.sevaRepository.save(item);
   }

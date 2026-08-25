@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body, UseGuards, Request, Query } from '@nestjs/common';
 import { SadhanaService } from './sadhana.service';
-import { SadhanaRecordEntity } from '../../entities/sadhana-record.entity';
-import { ISadhanaRecord } from '@temple/models';
+import { ISadhanaRecord, ISadhanaLogRequest } from '@temple/models';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('sadhana')
@@ -25,7 +24,7 @@ export class SadhanaController {
   @Post('log')
   async logSadhana(
     @Request() req,
-    @Body() recordDto: Partial<SadhanaRecordEntity>
+    @Body() recordDto: ISadhanaLogRequest
   ): Promise<ISadhanaRecord> {
     return this.sadhanaService.submitRecord(req.user.sub, recordDto);
   }

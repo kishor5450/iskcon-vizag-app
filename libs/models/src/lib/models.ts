@@ -65,3 +65,54 @@ export interface ISadhanaSummary {
   sadhanaTotalCount: number;
 }
 
+// Request and Response DTOs
+export interface IRegisterRequest {
+  name: string;
+  email: string;
+  passwordPlain: string;
+  phone?: string;
+  preferredLanguage?: 'en' | 'te' | 'hi';
+}
+
+export interface ILoginRequest {
+  email: string;
+  passwordPlain: string;
+}
+
+export interface IUpdatePreferencesRequest {
+  preferredLanguage: 'en' | 'te' | 'hi';
+  japaGoal: number;
+}
+
+export interface ISadhanaLogRequest {
+  date: string; // YYYY-MM-DD
+  japaRoundsCount: number;
+  readingCompleted: boolean;
+  readingProgress?: string;
+  mangalaArati: boolean;
+  morningPrayer: boolean;
+  spiritualLecture: boolean;
+}
+
+export interface ICreateAnnouncementRequest {
+  title: string;
+  description: string;
+  image?: string;
+  type: 'festival' | 'temple' | 'classes' | 'seva' | 'general';
+  date: string;
+  time?: string;
+  location?: string;
+  official: boolean;
+}
+
+export interface ICreateSevaRequest {
+  title: string;
+  description: string;
+  date: string;
+  time?: string;
+  location: string;
+  requiredDevoteesCount: number;
+  official: boolean;
+}
+
+

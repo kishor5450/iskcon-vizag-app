@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { DevoteeEntity } from '../../entities/devotee.entity';
-import { IDevotee, ILoginResponse } from '@temple/models';
+import { IDevotee, ILoginResponse, IRegisterRequest } from '@temple/models';
 
 @Injectable()
 export class AuthService {
@@ -18,21 +18,23 @@ export class AuthService {
     return crypto.createHash('sha256').update(password).digest('hex');
   }
 
-  async register(dto: Partial<DevoteeEntity>): Promise<IDevotee> {
+  async register(dto: IRegisterRequest): Promise<IDevotee> {
     const existing = await this.devoteeRepository.findOne({ where: { email: dto.email } });
     if (existing) {
       throw new ConflictException('Email already registered');
     }
 
     const devotee = this.devoteeRepository.create({
-      ...dto,
-      password: this.hashPassword(dto.password || ''),
-      japaGoal: dto.japaGoal || 16,
+      name: dto.name,
+      email: dto.email,
+      password: this.hashPassword(dto.passwordPlain || ''),
+      phone: dto.phone,
+      japaGoal: 16,
       currentStreak: 0,
       bestStreak: 0,
       totalRoundsChanted: 0,
       preferredLanguage: dto.preferredLanguage || 'en',
-      role: dto.role || 'devotee',
+      role: 'devotee',
     });
 
     const saved = await this.devoteeRepository.save(devotee);

@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AnnouncementEntity } from '../../entities/announcement.entity';
-import { IAnnouncement } from '@temple/models';
+import { IAnnouncement, ICreateAnnouncementRequest } from '@temple/models';
 
 @Injectable()
 export class AnnouncementService implements OnModuleInit {
@@ -27,7 +27,7 @@ export class AnnouncementService implements OnModuleInit {
     });
   }
 
-  async create(dto: Partial<AnnouncementEntity>): Promise<IAnnouncement> {
+  async create(dto: ICreateAnnouncementRequest): Promise<IAnnouncement> {
     const item = this.announcementRepository.create(dto);
     return this.announcementRepository.save(item);
   }
