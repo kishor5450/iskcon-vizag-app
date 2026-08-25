@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
-import { IAnnouncement } from '@temple/models';
+import { IAnnouncement, AnnouncementType } from '@temple/models';
 
 @Entity('announcements')
 export class AnnouncementEntity implements IAnnouncement {
@@ -15,8 +15,8 @@ export class AnnouncementEntity implements IAnnouncement {
   @Column({ type: 'varchar', length: 500, nullable: true })
   image?: string;
 
-  @Column({ type: 'varchar', length: 50, default: 'general' })
-  type: 'festival' | 'temple' | 'classes' | 'seva' | 'general';
+  @Column({ type: 'enum', enum: AnnouncementType, default: AnnouncementType.GENERAL })
+  type: AnnouncementType;
 
   @Column({ type: 'varchar', length: 50 })
   date: string;

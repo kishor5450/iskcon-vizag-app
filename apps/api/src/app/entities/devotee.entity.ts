@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
-import { IDevotee } from '@temple/models';
+import { IDevotee, PreferredLanguage, DevoteeRole } from '@temple/models';
 import { SadhanaRecordEntity } from './sadhana-record.entity';
 
 @Entity('devotees')
@@ -31,11 +31,11 @@ export class DevoteeEntity implements IDevotee {
   @Column({ type: 'int', default: 0 })
   totalRoundsChanted: number;
 
-  @Column({ type: 'varchar', length: 10, default: 'en' })
-  preferredLanguage: 'en' | 'te' | 'hi';
+  @Column({ type: 'enum', enum: PreferredLanguage, default: PreferredLanguage.ENGLISH })
+  preferredLanguage: PreferredLanguage;
 
-  @Column({ type: 'varchar', length: 20, default: 'devotee' })
-  role: 'devotee' | 'admin';
+  @Column({ type: 'enum', enum: DevoteeRole, default: DevoteeRole.DEVOTEE })
+  role: DevoteeRole;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: string;

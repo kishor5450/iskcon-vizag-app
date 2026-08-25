@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AnnouncementEntity } from '../../entities/announcement.entity';
-import { IAnnouncement, ICreateAnnouncementRequest } from '@temple/models';
+import { IAnnouncement, ICreateAnnouncementRequest, AnnouncementType } from '@temple/models';
 
 @Injectable()
 export class AnnouncementService implements OnModuleInit {
@@ -41,7 +41,7 @@ export class AnnouncementService implements OnModuleInit {
         title: 'Janmashtami Celebrations',
         description: 'Special program, abhishek, and kirtan for Krishna Janmashtami from 25 Aug - 27 Aug.',
         image: 'https://images.unsplash.com/photo-1590050752117-238cb061295a',
-        type: 'festival',
+        type: AnnouncementType.FESTIVAL,
         date: '25 Aug - 27 Aug',
         time: '4:30 AM onwards',
         location: 'ISKCON Vizag Temple Hall',
@@ -50,7 +50,7 @@ export class AnnouncementService implements OnModuleInit {
       {
         title: 'Mangala Arati Timing Change',
         description: 'From tomorrow onwards, Mangala Arati will commence at 4:15 AM sharp instead of 4:30 AM due to seasonal shifts.',
-        type: 'temple',
+        type: AnnouncementType.TEMPLE,
         date: 'Today',
         time: '4:15 AM onwards',
         location: 'Main Temple',
@@ -59,7 +59,7 @@ export class AnnouncementService implements OnModuleInit {
       {
         title: 'Bhagavad-gita Class',
         description: 'Chapter 2, Verse 20 discourse by HG Samba Das. Welcome all.',
-        type: 'classes',
+        type: AnnouncementType.CLASSES,
         date: 'Tomorrow',
         time: '7:00 PM',
         location: 'Seminar Hall 1',
@@ -68,7 +68,7 @@ export class AnnouncementService implements OnModuleInit {
       {
         title: 'Sunday Feast Program',
         description: 'Special lectures, sandhya arati, and delicious prasadam distribution for all devotees.',
-        type: 'general',
+        type: AnnouncementType.GENERAL,
         date: 'This Sunday',
         time: '5:30 PM',
         location: 'Kalyana Mandapam',
@@ -77,7 +77,7 @@ export class AnnouncementService implements OnModuleInit {
       {
         title: 'Youth Program (Prerna)',
         description: 'Discourse and discussion on spiritual leadership for youths.',
-        type: 'classes',
+        type: AnnouncementType.CLASSES,
         date: 'This Sunday',
         time: '10:00 AM',
         location: 'Youth Center Room 3',
@@ -86,7 +86,7 @@ export class AnnouncementService implements OnModuleInit {
       {
         title: 'Rath Yatra 2026 Planning meeting',
         description: 'All volunteers welcome to join for scheduling sevadhari tasks.',
-        type: 'seva',
+        type: AnnouncementType.SEVA,
         date: '10 Sep',
         time: '6:00 PM',
         location: 'Temple Committee Room',

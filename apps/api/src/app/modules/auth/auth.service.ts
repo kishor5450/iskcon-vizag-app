@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { DevoteeEntity } from '../../entities/devotee.entity';
-import { IDevotee, ILoginResponse, IRegisterRequest } from '@temple/models';
+import { IDevotee, ILoginResponse, IRegisterRequest, PreferredLanguage, DevoteeRole } from '@temple/models';
 
 @Injectable()
 export class AuthService {
@@ -33,8 +33,8 @@ export class AuthService {
       currentStreak: 0,
       bestStreak: 0,
       totalRoundsChanted: 0,
-      preferredLanguage: dto.preferredLanguage || 'en',
-      role: 'devotee',
+      preferredLanguage: dto.preferredLanguage || PreferredLanguage.ENGLISH,
+      role: DevoteeRole.DEVOTEE,
     });
 
     const saved = await this.devoteeRepository.save(devotee);
@@ -74,7 +74,7 @@ export class AuthService {
     return result as IDevotee;
   }
 
-  async updatePreferences(id: number, lang: 'en' | 'te' | 'hi', japaGoal: number): Promise<IDevotee> {
+  async updatePreferences(id: number, lang: PreferredLanguage, japaGoal: number): Promise<IDevotee> {
     await this.devoteeRepository.update(id, { preferredLanguage: lang, japaGoal });
     return this.getDevoteeById(id);
   }

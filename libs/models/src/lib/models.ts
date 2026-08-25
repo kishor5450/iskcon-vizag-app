@@ -1,3 +1,22 @@
+export enum PreferredLanguage {
+  ENGLISH = 'en',
+  TELUGU = 'te',
+  HINDI = 'hi',
+}
+
+export enum DevoteeRole {
+  DEVOTEE = 'devotee',
+  ADMIN = 'admin',
+}
+
+export enum AnnouncementType {
+  FESTIVAL = 'festival',
+  TEMPLE = 'temple',
+  CLASSES = 'classes',
+  SEVA = 'seva',
+  GENERAL = 'general',
+}
+
 export interface IDevotee {
   id: number;
   name: string;
@@ -7,8 +26,8 @@ export interface IDevotee {
   currentStreak: number;
   bestStreak: number;
   totalRoundsChanted: number;
-  preferredLanguage: 'en' | 'te' | 'hi';
-  role: 'devotee' | 'admin';
+  preferredLanguage: PreferredLanguage;
+  role: DevoteeRole;
   createdAt: string;
 }
 
@@ -30,7 +49,7 @@ export interface IAnnouncement {
   title: string;
   description: string;
   image?: string;
-  type: 'festival' | 'temple' | 'classes' | 'seva' | 'general';
+  type: AnnouncementType;
   date: string;
   time?: string;
   location?: string;
@@ -71,7 +90,7 @@ export interface IRegisterRequest {
   email: string;
   passwordPlain: string;
   phone?: string;
-  preferredLanguage?: 'en' | 'te' | 'hi';
+  preferredLanguage?: PreferredLanguage;
 }
 
 export interface ILoginRequest {
@@ -80,7 +99,7 @@ export interface ILoginRequest {
 }
 
 export interface IUpdatePreferencesRequest {
-  preferredLanguage: 'en' | 'te' | 'hi';
+  preferredLanguage: PreferredLanguage;
   japaGoal: number;
 }
 
@@ -98,7 +117,7 @@ export interface ICreateAnnouncementRequest {
   title: string;
   description: string;
   image?: string;
-  type: 'festival' | 'temple' | 'classes' | 'seva' | 'general';
+  type: AnnouncementType;
   date: string;
   time?: string;
   location?: string;
