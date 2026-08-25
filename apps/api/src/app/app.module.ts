@@ -18,15 +18,11 @@ import { SevaModule } from './modules/seva/seva.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 3306),
-        username: configService.get<string>('DB_USERNAME', 'devotee'),
-        password: configService.get<string>('DB_PASSWORD', 'devotee_password'),
-        database: configService.get<string>('DB_DATABASE', 'iskcon_vizag_db'),
+        type: 'sqlite',
+        database: 'iskcon_vizag.sqlite',
         entities: [DevoteeEntity, SadhanaRecordEntity, AnnouncementEntity, SevaOpportunityEntity],
         synchronize: true, // Dev sync: auto-creates tables on start
-      }),
+      } as any),
       inject: [ConfigService],
     }),
     AuthModule,
@@ -37,5 +33,5 @@ import { SevaModule } from './modules/seva/seva.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
 
