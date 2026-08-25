@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { AnnouncementService } from './announcement.service';
-import { IAnnouncement, ICreateAnnouncementRequest } from '@temple/models';
+import { IAnnouncement, CreateAnnouncementRequestDto } from '@temple/models';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('announcements')
@@ -17,7 +17,7 @@ export class AnnouncementController {
   }
 
   @Post()
-  async create(@Body() dto: ICreateAnnouncementRequest): Promise<IAnnouncement> {
+  async create(@Body() dto: CreateAnnouncementRequestDto): Promise<IAnnouncement> {
     return this.announcementService.create(dto);
   }
 }

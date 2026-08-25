@@ -70,40 +70,85 @@ export interface ISevaOpportunity {
   createdAt: string;
 }
 
-export interface ILoginResponse {
+export class LoginResponseDto {
   token: string;
   devotee: IDevotee;
+
+  constructor(token: string, devotee: IDevotee) {
+    this.token = token;
+    this.devotee = devotee;
+  }
 }
 
-export interface ISadhanaSummary {
+export class SadhanaSummaryDto {
   japaRoundsChanted: number;
   japaGoal: number;
   readingBook: string;
   readingProgress: string;
   sadhanaCompletedCount: number;
   sadhanaTotalCount: number;
+
+  constructor(
+    japaRoundsChanted: number,
+    japaGoal: number,
+    readingBook: string,
+    readingProgress: string,
+    sadhanaCompletedCount: number,
+    sadhanaTotalCount: number
+  ) {
+    this.japaRoundsChanted = japaRoundsChanted;
+    this.japaGoal = japaGoal;
+    this.readingBook = readingBook;
+    this.readingProgress = readingProgress;
+    this.sadhanaCompletedCount = sadhanaCompletedCount;
+    this.sadhanaTotalCount = sadhanaTotalCount;
+  }
 }
 
 // Request and Response DTOs
-export interface IRegisterRequest {
+export class RegisterRequestDto {
   name: string;
   email: string;
   passwordPlain: string;
   phone?: string;
   preferredLanguage?: PreferredLanguage;
+
+  constructor(
+    name: string,
+    email: string,
+    passwordPlain: string,
+    phone?: string,
+    preferredLanguage?: PreferredLanguage
+  ) {
+    this.name = name;
+    this.email = email;
+    this.passwordPlain = passwordPlain;
+    this.phone = phone;
+    this.preferredLanguage = preferredLanguage;
+  }
 }
 
-export interface ILoginRequest {
+export class LoginRequestDto {
   email: string;
   passwordPlain: string;
+
+  constructor(email: string, passwordPlain: string) {
+    this.email = email;
+    this.passwordPlain = passwordPlain;
+  }
 }
 
-export interface IUpdatePreferencesRequest {
+export class UpdatePreferencesRequestDto {
   preferredLanguage: PreferredLanguage;
   japaGoal: number;
+
+  constructor(preferredLanguage: PreferredLanguage, japaGoal: number) {
+    this.preferredLanguage = preferredLanguage;
+    this.japaGoal = japaGoal;
+  }
 }
 
-export interface ISadhanaLogRequest {
+export class SadhanaLogRequestDto {
   date: string; // YYYY-MM-DD
   japaRoundsCount: number;
   readingCompleted: boolean;
@@ -111,9 +156,27 @@ export interface ISadhanaLogRequest {
   mangalaArati: boolean;
   morningPrayer: boolean;
   spiritualLecture: boolean;
+
+  constructor(
+    date: string,
+    japaRoundsCount: number,
+    readingCompleted: boolean,
+    readingProgress: string | undefined,
+    mangalaArati: boolean,
+    morningPrayer: boolean,
+    spiritualLecture: boolean
+  ) {
+    this.date = date;
+    this.japaRoundsCount = japaRoundsCount;
+    this.readingCompleted = readingCompleted;
+    this.readingProgress = readingProgress;
+    this.mangalaArati = mangalaArati;
+    this.morningPrayer = morningPrayer;
+    this.spiritualLecture = spiritualLecture;
+  }
 }
 
-export interface ICreateAnnouncementRequest {
+export class CreateAnnouncementRequestDto {
   title: string;
   description: string;
   image?: string;
@@ -122,9 +185,29 @@ export interface ICreateAnnouncementRequest {
   time?: string;
   location?: string;
   official: boolean;
+
+  constructor(
+    title: string,
+    description: string,
+    image: string | undefined,
+    type: AnnouncementType,
+    date: string,
+    time: string | undefined,
+    location: string | undefined,
+    official: boolean
+  ) {
+    this.title = title;
+    this.description = description;
+    this.image = image;
+    this.type = type;
+    this.date = date;
+    this.time = time;
+    this.location = location;
+    this.official = official;
+  }
 }
 
-export interface ICreateSevaRequest {
+export class CreateSevaRequestDto {
   title: string;
   description: string;
   date: string;
@@ -132,6 +215,283 @@ export interface ICreateSevaRequest {
   location: string;
   requiredDevoteesCount: number;
   official: boolean;
+
+  constructor(
+    title: string,
+    description: string,
+    date: string,
+    time: string | undefined,
+    location: string,
+    requiredDevoteesCount: number,
+    official: boolean
+  ) {
+    this.title = title;
+    this.description = description;
+    this.date = date;
+    this.time = time;
+    this.location = location;
+    this.requiredDevoteesCount = requiredDevoteesCount;
+    this.official = official;
+  }
 }
+
+export class TranslationKeysDto {
+  greeting: string;
+  morning: string;
+  myBhakti: string;
+  japa: string;
+  rounds: string;
+  todaysReading: string;
+  todaysSadhana: string;
+  myProgress: string;
+  officialUpdates: string;
+  home: string;
+  sadhanaTab: string;
+  updatesTab: string;
+  journeyTab: string;
+  profileTab: string;
+  readNow: string;
+  continueJapa: string;
+  tapToCount: string;
+  completed: string;
+  streaks: string;
+  days: string;
+  bestStreak: string;
+  thisMonth: string;
+  japaHistory: string;
+  week: string;
+  month: string;
+  year: string;
+  language: string;
+  changeLanguage: string;
+  lightMode: string;
+  darkMode: string;
+  currentStreak: string;
+  mangalaArati: string;
+  morningPrayer: string;
+  spiritualLecture: string;
+  official: string;
+  community: string;
+  viewDetails: string;
+  seva: string;
+  gitaVerse: string;
+  gitaVerseRef: string;
+  sadhanaRatio: string;
+  all: string;
+  festivals: string;
+  temple: string;
+  classes: string;
+  sevaCat: string;
+  tapBead: string;
+
+  constructor(fields: {
+    greeting: string;
+    morning: string;
+    myBhakti: string;
+    japa: string;
+    rounds: string;
+    todaysReading: string;
+    todaysSadhana: string;
+    myProgress: string;
+    officialUpdates: string;
+    home: string;
+    sadhanaTab: string;
+    updatesTab: string;
+    journeyTab: string;
+    profileTab: string;
+    readNow: string;
+    continueJapa: string;
+    tapToCount: string;
+    completed: string;
+    streaks: string;
+    days: string;
+    bestStreak: string;
+    thisMonth: string;
+    japaHistory: string;
+    week: string;
+    month: string;
+    year: string;
+    language: string;
+    changeLanguage: string;
+    lightMode: string;
+    darkMode: string;
+    currentStreak: string;
+    mangalaArati: string;
+    morningPrayer: string;
+    spiritualLecture: string;
+    official: string;
+    community: string;
+    viewDetails: string;
+    seva: string;
+    gitaVerse: string;
+    gitaVerseRef: string;
+    sadhanaRatio: string;
+    all: string;
+    festivals: string;
+    temple: string;
+    classes: string;
+    sevaCat: string;
+    tapBead: string;
+  }) {
+    this.greeting = fields.greeting;
+    this.morning = fields.morning;
+    this.myBhakti = fields.myBhakti;
+    this.japa = fields.japa;
+    this.rounds = fields.rounds;
+    this.todaysReading = fields.todaysReading;
+    this.todaysSadhana = fields.todaysSadhana;
+    this.myProgress = fields.myProgress;
+    this.officialUpdates = fields.officialUpdates;
+    this.home = fields.home;
+    this.sadhanaTab = fields.sadhanaTab;
+    this.updatesTab = fields.updatesTab;
+    this.journeyTab = fields.journeyTab;
+    this.profileTab = fields.profileTab;
+    this.readNow = fields.readNow;
+    this.continueJapa = fields.continueJapa;
+    this.tapToCount = fields.tapToCount;
+    this.completed = fields.completed;
+    this.streaks = fields.streaks;
+    this.days = fields.days;
+    this.bestStreak = fields.bestStreak;
+    this.thisMonth = fields.thisMonth;
+    this.japaHistory = fields.japaHistory;
+    this.week = fields.week;
+    this.month = fields.month;
+    this.year = fields.year;
+    this.language = fields.language;
+    this.changeLanguage = fields.changeLanguage;
+    this.lightMode = fields.lightMode;
+    this.darkMode = fields.darkMode;
+    this.currentStreak = fields.currentStreak;
+    this.mangalaArati = fields.mangalaArati;
+    this.morningPrayer = fields.morningPrayer;
+    this.spiritualLecture = fields.spiritualLecture;
+    this.official = fields.official;
+    this.community = fields.community;
+    this.viewDetails = fields.viewDetails;
+    this.seva = fields.seva;
+    this.gitaVerse = fields.gitaVerse;
+    this.gitaVerseRef = fields.gitaVerseRef;
+    this.sadhanaRatio = fields.sadhanaRatio;
+    this.all = fields.all;
+    this.festivals = fields.festivals;
+    this.temple = fields.temple;
+    this.classes = fields.classes;
+    this.sevaCat = fields.sevaCat;
+    this.tapBead = fields.tapBead;
+  }
+}
+
+export class TranslationsModel {
+  en: TranslationKeysDto;
+  te: TranslationKeysDto;
+
+  constructor(en: TranslationKeysDto, te: TranslationKeysDto) {
+    this.en = en;
+    this.te = te;
+  }
+}
+
+export const TRANSLATIONS = new TranslationsModel(
+  new TranslationKeysDto({
+    greeting: "Hare Krishna 🙏",
+    morning: "Good Morning, Arjun",
+    myBhakti: "My Bhakti",
+    japa: "Japa",
+    rounds: "Rounds",
+    todaysReading: "Today's Reading",
+    todaysSadhana: "Today's Sadhana",
+    myProgress: "My Progress",
+    officialUpdates: "Important From ISKCON Vizag",
+    home: "Home",
+    sadhanaTab: "Sadhana",
+    updatesTab: "Updates",
+    journeyTab: "Journey",
+    profileTab: "Profile",
+    readNow: "Read Now",
+    continueJapa: "Continue Japa",
+    tapToCount: "Tap to count",
+    completed: "Completed",
+    streaks: "Streaks",
+    days: "Days",
+    bestStreak: "Best Streak",
+    thisMonth: "This Month",
+    japaHistory: "Japa History",
+    week: "Week",
+    month: "Month",
+    year: "Year",
+    language: "Language",
+    changeLanguage: "భాషను మార్చండి",
+    lightMode: "Light Mode",
+    darkMode: "Dark Mode",
+    currentStreak: "Current Streak",
+    mangalaArati: "Mangala Arati",
+    morningPrayer: "Morning Prayer",
+    spiritualLecture: "Spiritual Lecture",
+    official: "Official ISKCON Vizag",
+    community: "Community",
+    viewDetails: "View Details",
+    seva: "Seva Opportunity",
+    gitaVerse: "Bhagavad-gita",
+    gitaVerseRef: "Chapter 2, Verse 20",
+    sadhanaRatio: "Completed",
+    all: "All",
+    festivals: "Festivals",
+    temple: "Temple",
+    classes: "Classes",
+    sevaCat: "Seva",
+    tapBead: "Tap Bead to Count Japa",
+  }),
+  new TranslationKeysDto({
+    greeting: "హరే కృష్ణ 🙏",
+    morning: "శుభోదయం, అర్జున్",
+    myBhakti: "నా భక్తి",
+    japa: "జపం",
+    rounds: "రౌండ్లు",
+    todaysReading: "నేటి పఠనం",
+    todaysSadhana: "నేటి సాధన",
+    myProgress: "నా ప్రగతి",
+    officialUpdates: "ఇస్కాన్ వైజాగ్ ముఖ్య సమాచారం",
+    home: "హోమ్",
+    sadhanaTab: "సాధన",
+    updatesTab: "అప్డేట్లు",
+    journeyTab: "నా ప్రయాణం",
+    profileTab: "ప్రొఫైల్",
+    readNow: "ఇప్పుడే చదవండి",
+    continueJapa: "జపం కొనసాగించండి",
+    tapToCount: "లెక్కించడానికి నొక్కండి",
+    completed: "పూర్తయింది",
+    streaks: "రోజుల వరుస",
+    days: "రోజులు",
+    bestStreak: "ఉత్తమ వరుస",
+    thisMonth: "ఈ నెల",
+    japaHistory: "జప చరిత్ర",
+    week: "వారం",
+    month: "నెల",
+    year: "సంవత్సరం",
+    language: "భాష",
+    changeLanguage: "Change Language",
+    lightMode: "లైట్ మోడ్",
+    darkMode: "డార్క్ మోడ్",
+    currentStreak: "ప్రస్తుత వరుస",
+    mangalaArati: "మంగళ ఆరతి",
+    morningPrayer: "ఉదయ ప్రార్థన",
+    spiritualLecture: "ఆధ్యాత్మిక ఉపన్యాసం",
+    official: "అధికారిక ఇస్కాన్ వైజాగ్",
+    community: "కమ్యూనిటీ",
+    viewDetails: "వివరాలు చూడండి",
+    seva: "సేవ అవకాశం",
+    gitaVerse: "భగవద్గీత",
+    gitaVerseRef: "అధ్యాయం 2, శ్లోకం 20",
+    sadhanaRatio: "పూర్తయింది",
+    all: "అన్నీ",
+    festivals: "పండుగలు",
+    temple: "దేవాలయం",
+    classes: "తరగతులు",
+    sevaCat: "సేవ",
+    tapBead: "జపం చేయడానికి పూసను నొక్కండి",
+  })
+);
 
 

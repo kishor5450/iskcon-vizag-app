@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, UseGuards, Request, Query } from '@nestjs/common';
 import { SadhanaService } from './sadhana.service';
-import { ISadhanaRecord, ISadhanaLogRequest } from '@temple/models';
+import { ISadhanaRecord, SadhanaLogRequestDto } from '@temple/models';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('sadhana')
@@ -24,7 +24,7 @@ export class SadhanaController {
   @Post('log')
   async logSadhana(
     @Request() req,
-    @Body() recordDto: ISadhanaLogRequest
+    @Body() recordDto: SadhanaLogRequestDto
   ): Promise<ISadhanaRecord> {
     return this.sadhanaService.submitRecord(req.user.sub, recordDto);
   }

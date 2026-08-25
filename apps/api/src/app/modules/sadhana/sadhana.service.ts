@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SadhanaRecordEntity } from '../../entities/sadhana-record.entity';
 import { DevoteeEntity } from '../../entities/devotee.entity';
-import { ISadhanaRecord, ISadhanaLogRequest } from '@temple/models';
+import { ISadhanaRecord, SadhanaLogRequestDto } from '@temple/models';
 
 @Injectable()
 export class SadhanaService {
@@ -28,7 +28,7 @@ export class SadhanaService {
     });
   }
 
-  async submitRecord(devoteeId: number, dto: ISadhanaLogRequest): Promise<ISadhanaRecord> {
+  async submitRecord(devoteeId: number, dto: SadhanaLogRequestDto): Promise<ISadhanaRecord> {
     if (!dto.date) {
       throw new BadRequestException('Date is required');
     }

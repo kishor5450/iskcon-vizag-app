@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { DevoteeEntity } from '../../entities/devotee.entity';
-import { IDevotee, ILoginResponse, IRegisterRequest, PreferredLanguage, DevoteeRole } from '@temple/models';
+import { IDevotee, LoginResponseDto, RegisterRequestDto, PreferredLanguage, DevoteeRole } from '@temple/models';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +18,7 @@ export class AuthService {
     return crypto.createHash('sha256').update(password).digest('hex');
   }
 
-  async register(dto: IRegisterRequest): Promise<IDevotee> {
+  async register(dto: RegisterRequestDto): Promise<IDevotee> {
     const existing = await this.devoteeRepository.findOne({ where: { email: dto.email } });
     if (existing) {
       throw new ConflictException('Email already registered');
@@ -43,7 +43,7 @@ export class AuthService {
     return result as IDevotee;
   }
 
-  async login(email: string, passwordPlain: string): Promise<ILoginResponse> {
+  async login(email: string, passwordPlain: string): Promise<LoginResponseDto> {
     const devotee = await this.devoteeRepository.findOne({ where: { email } });
     if (!devotee) {
       throw new UnauthorizedException('Invalid credentials');

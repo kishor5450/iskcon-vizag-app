@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { SevaService } from './seva.service';
-import { ISevaOpportunity, ICreateSevaRequest } from '@temple/models';
+import { ISevaOpportunity, CreateSevaRequestDto } from '@temple/models';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('sevas')
@@ -14,7 +14,7 @@ export class SevaController {
   }
 
   @Post()
-  async create(@Body() dto: ICreateSevaRequest): Promise<ISevaOpportunity> {
+  async create(@Body() dto: CreateSevaRequestDto): Promise<ISevaOpportunity> {
     return this.sevaService.create(dto);
   }
 
