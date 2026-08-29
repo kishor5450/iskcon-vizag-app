@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import Svg, { Circle, Rect } from 'react-native-svg';
+import { ISadhanaRecord, IAnnouncement, AnnouncementType, PreferredLanguage, AppTab } from '@temple/models';
 
 interface HomeScreenProps {
   t: any;
@@ -16,8 +18,15 @@ interface HomeScreenProps {
   currentStreak: number;
   bestStreak: number;
   thisMonthRounds: number;
-  onNavigate: (tab: 'home' | 'sadhana' | 'updates' | 'journey' | 'profile') => void;
+  onNavigate: (tab: AppTab) => void;
   isDarkMode: boolean;
+  userName?: string;
+  history: ISadhanaRecord[];
+  announcements: IAnnouncement[];
+  readingProgress: string;
+  nbsJoined: boolean;
+  onToggleNbs: (val: boolean) => void;
+  lang: PreferredLanguage;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -37,141 +46,455 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   thisMonthRounds,
   onNavigate,
   isDarkMode,
+  userName = 'Arjun',
+  history = [],
+  announcements = [],
+  readingProgress = 'Bhagavad-gita 2.20',
+  nbsJoined = false,
+  onToggleNbs = () => {},
+  lang = PreferredLanguage.ENGLISH,
 }) => {
+
+  // Date utilities to get local days of the current week (Mon-Sun)
+  const getDatesOfCurrentWeek = () => {
+    const current = new Date();
+    const day = current.getDay();
+    // Adjust so week starts on Monday (1) instead of Sunday (0)
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(current.setDate(diff));
+    
+    const week = [];
+    for (let i = 0; i < 7; i++) {
+      const nextDay = new Date(monday);
+      nextDay.setDate(monday.getDate() + i);
+      const year = nextDay.getFullYear();
+      const month = String(nextDay.getMonth() + 1).padStart(2, '0');
+      const date = String(nextDay.getDate()).padStart(2, '0');
+      week.push(`${year}-${month}-${date}`);
+    }
+    return week;
+  };
+
+  const weekDates = getDatesOfCurrentWeek();
+
+  // 1. Japa progress (Chanted at least 1 round on how many days this week)
+  const japaActiveDays = weekDates.filter(dateStr => {
+    const record = history.find(r => r.date === dateStr);
+    return record && record.japaRoundsCount > 0;
+  }).length;
+
+  // 2. Reading progress (completed reading on how many days this week)
+  const readingActiveDays = weekDates.filter(dateStr => {
+    const record = history.find(r => r.date === dateStr);
+    return record && record.readingCompleted;
+  }).length;
+
+  // 3. Sadhana progress (completed at least 1 sadhana item on how many days this week)
+  const sadhanaActiveDays = weekDates.filter(dateStr => {
+    const record = history.find(r => r.date === dateStr);
+    if (!record) return false;
+    const completedCount = [
+      record.japaRoundsCount >= japaGoal,
+      record.readingCompleted,
+      record.mangalaArati,
+      record.morningPrayer,
+      record.spiritualLecture
+    ].filter(Boolean).length;
+    return completedCount > 0;
+  }).length;
+
+  const japaBars = weekDates.map(dateStr => {
+    const record = history.find(r => r.date === dateStr);
+    const rounds = record ? record.japaRoundsCount : 0;
+    const height = japaGoal > 0 ? Math.min(24, Math.round((rounds / japaGoal) * 24)) : 0;
+    return { height, active: rounds > 0 };
+  });
+
+  const readingBars = weekDates.map(dateStr => {
+    const record = history.find(r => r.date === dateStr);
+    const completed = record ? record.readingCompleted : false;
+    const height = completed ? 24 : 0;
+    return { height, active: completed };
+  });
+
+  const sadhanaBars = weekDates.map(dateStr => {
+    const record = history.find(r => r.date === dateStr);
+    if (!record) return { height: 0, active: false };
+    const completedCount = [
+      record.japaRoundsCount >= japaGoal,
+      record.readingCompleted,
+      record.mangalaArati,
+      record.morningPrayer,
+      record.spiritualLecture
+    ].filter(Boolean).length;
+    const height = Math.round((completedCount / 5) * 24);
+    return { height, active: completedCount > 0 };
+  });
+
+  // Reading progress text split
+  const lastSpaceIdx = readingProgress.lastIndexOf(' ');
+  const bookTitle = lastSpaceIdx !== -1 ? readingProgress.substring(0, lastSpaceIdx) : readingProgress;
+  const bookRef = lastSpaceIdx !== -1 ? readingProgress.substring(lastSpaceIdx + 1) : '';
+
+  // Dynamic Announcements calculations
+  const latestAnnouncement = announcements.find(a => a.official) || announcements[0];
+  
+  const fallbackAlerts = [
+    {
+      id: -1,
+      title: 'Mangala Arati Timing Change',
+      date: 'Today',
+      description: 'From tomorrow onwards, Mangala Arati starts at 4:15 AM onwards.',
+      type: AnnouncementType.TEMPLE
+    },
+    {
+      id: -2,
+      title: 'Bhagavad-gita Class',
+      date: 'Today',
+      description: 'Discourse on Chapter 2, Verse 20 starts tomorrow evening.',
+      type: AnnouncementType.CLASSES
+    }
+  ];
+
+  const alertAnnouncements = announcements.length > 0
+    ? announcements
+        .filter(a => a.id !== latestAnnouncement?.id && (a.type === AnnouncementType.TEMPLE || a.type === AnnouncementType.CLASSES || a.type === AnnouncementType.GENERAL))
+        .slice(0, 2)
+    : fallbackAlerts;
+
+  const quickLinks = [
+    { title: 'Temple Timings', icon: '⏰' },
+    { title: 'Darshan', icon: '🕉️' },
+    { title: 'Donate', icon: '💳' },
+    { title: 'Seva', icon: '🪷' },
+    { title: 'Events', icon: '📅' },
+    { title: 'Prasadam', icon: '🍲' },
+    { title: 'Contact Us', icon: '📞' },
+  ];
+
   return (
-    <View>
+    <View style={styles.container}>
       {/* Devotee Greetings Card */}
       <View style={[styles.greetingCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
         <View style={styles.greetingHeader}>
           <View>
-            <Text style={[styles.greetingText, { color: colors.textMain }]}>{t.greeting}</Text>
-            <Text style={[styles.subGreetingText, { color: colors.textMain }]}>{t.morning}</Text>
+            <Text style={[styles.greetingText, { color: colors.textSub }]}>{t.greeting}</Text>
+            <Text style={[styles.subGreetingText, { color: colors.textMain }]}>Good Morning, {userName}</Text>
           </View>
-          <View style={styles.bellIcon}>
-            <Text style={{ fontSize: 22 }}>🔔</Text>
-          </View>
+          <TouchableOpacity style={[styles.bellIcon, { backgroundColor: colors.divider }]}>
+            <Text style={{ fontSize: 18 }}>🔔</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* My Bhakti Dashboard Snippet */}
+        {/* My Bhakti Dashboard Section */}
         <View style={styles.dashboardSection}>
-          <Text style={[styles.dashboardTitle, { color: colors.textMain }]}>{t.myBhakti}</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.dashboardTitle, { color: colors.textMain }]}>{t.myBhakti}</Text>
+            <TouchableOpacity onPress={() => onNavigate(AppTab.SADHANA)}>
+              <Text style={[styles.viewAllLink, { color: colors.accentGold }]}>View All {'>'}</Text>
+            </TouchableOpacity>
+          </View>
+          
           <View style={styles.dashboardRow}>
             
             {/* Japa Card */}
             <TouchableOpacity 
-              onPress={() => onNavigate('sadhana')} 
-              style={[styles.dashCard, { backgroundColor: colors.pureWhite, shadowColor: isDarkMode ? '#000' : '#8C1D1D' }]}
+              onPress={() => onNavigate(AppTab.SADHANA)} 
+              style={[styles.dashCard, { backgroundColor: colors.bg, borderColor: colors.cardBorder }]}
             >
-              <Text style={styles.dashEmoji}>📿</Text>
+              {/* Mini Bead Ring Drawing */}
+              <View style={styles.miniBeadRing}>
+                <Svg width={40} height={40}>
+                  <Circle cx={20} cy={20} r={14} stroke={colors.cardBorder} strokeWidth={1} fill="none" />
+                  {/* Active segment representation */}
+                  <Circle cx={20} cy={6} r={3.5} fill={colors.accentGold} />
+                  <Circle cx={28} cy={9} r={2.5} fill={colors.accentGold} />
+                  <Circle cx={33} cy={16} r={2.5} fill={colors.accentGold} />
+                  <Circle cx={33} cy={24} r={2.5} fill={colors.accentGold} />
+                  <Circle cx={28} cy={31} r={2.5} fill={colors.cardBorder} />
+                  <Circle cx={20} cy={34} r={2.5} fill={colors.cardBorder} />
+                  <Circle cx={12} cy={31} r={2.5} fill={colors.cardBorder} />
+                  <Circle cx={7} cy={24} r={2.5} fill={colors.cardBorder} />
+                  <Circle cx={7} cy={16} r={2.5} fill={colors.cardBorder} />
+                  <Circle cx={12} cy={9} r={2.5} fill={colors.cardBorder} />
+                </Svg>
+              </View>
               <Text style={[styles.dashLabel, { color: colors.textSub }]}>{t.japa}</Text>
               <Text style={[styles.dashValue, { color: colors.textMain }]}>{japaRounds} / {japaGoal}</Text>
-              <Text style={styles.dashSubValue}>{t.rounds}</Text>
-              <View style={[styles.dashButton, { backgroundColor: colors.textMain }]}>
-                <Text style={styles.dashButtonText}>{t.continueJapa}</Text>
+              <Text style={[styles.dashSubValue, { color: colors.textSub }]}>{t.rounds}</Text>
+              
+              <View style={[styles.dashButton, { backgroundColor: colors.accentGold }]}>
+                <Text style={[styles.dashButtonText, { color: '#160826' }]}>{t.continueJapa}</Text>
               </View>
             </TouchableOpacity>
-
+ 
             {/* Today's Reading Card */}
-            <View style={[styles.dashCard, { backgroundColor: colors.pureWhite, shadowColor: isDarkMode ? '#000' : '#8C1D1D' }]}>
+            <View style={[styles.dashCard, { backgroundColor: colors.bg, borderColor: colors.cardBorder }]}>
               <Text style={styles.dashEmoji}>📖</Text>
               <Text style={[styles.dashLabel, { color: colors.textSub }]}>{t.todaysReading}</Text>
-              <Text style={[styles.dashValueText, { color: colors.textMain }]} numberOfLines={1}>{t.gitaVerse}</Text>
-              <Text style={styles.dashSubValue}>{t.gitaVerseRef}</Text>
-              <TouchableOpacity style={[styles.dashButton, { backgroundColor: colors.textMain }]}>
-                <Text style={styles.dashButtonText}>{t.readNow}</Text>
+              <Text style={[styles.dashValueText, { color: colors.textMain }]} numberOfLines={1}>{bookTitle}</Text>
+              <Text style={[styles.dashSubValue, { color: colors.textSub }]}>{bookRef || t.gitaVerseRef}</Text>
+              
+              <TouchableOpacity style={[styles.dashButton, { backgroundColor: colors.accentGold }]}>
+                <Text style={[styles.dashButtonText, { color: '#160826' }]}>{t.readNow}</Text>
               </TouchableOpacity>
             </View>
-
-            {/* Today's Sadhana Progress */}
+ 
+            {/* Today's Sadhana Card */}
             <TouchableOpacity 
-              onPress={() => onNavigate('sadhana')} 
-              style={[styles.dashCard, { backgroundColor: colors.pureWhite, shadowColor: isDarkMode ? '#000' : '#8C1D1D' }]}
+              onPress={() => onNavigate(AppTab.SADHANA)} 
+              style={[styles.dashCard, { backgroundColor: colors.bg, borderColor: colors.cardBorder }]}
             >
-              <Text style={styles.dashEmoji}>🪷</Text>
+              <View style={styles.sadhanaListSnippet}>
+                <View style={styles.snippetRow}>
+                  <Text style={[styles.snippetText, { color: colors.textSub }]}>Japa</Text>
+                  <Text style={{ color: colors.accentGold, fontSize: 10 }}>✔</Text>
+                </View>
+                <View style={styles.snippetRow}>
+                  <Text style={[styles.snippetText, { color: colors.textSub }]}>Reading</Text>
+                  <Text style={{ color: colors.accentGold, fontSize: 10 }}>✔</Text>
+                </View>
+                <View style={styles.snippetRow}>
+                  <Text style={[styles.snippetText, { color: colors.textSub }]}>Arati</Text>
+                  <Text style={{ color: colors.cardBorder, fontSize: 10 }}>◯</Text>
+                </View>
+                <View style={styles.snippetRow}>
+                  <Text style={[styles.snippetText, { color: colors.textSub }]}>Prayer</Text>
+                  <Text style={{ color: colors.accentGold, fontSize: 10 }}>✔</Text>
+                </View>
+              </View>
               <Text style={[styles.dashLabel, { color: colors.textSub }]}>{t.todaysSadhana}</Text>
               <Text style={[styles.dashValue, { color: colors.textMain }]}>{sadhanaCompletedCount} / {sadhanaTotalCount}</Text>
-              <Text style={styles.dashSubValue}>{t.sadhanaRatio}</Text>
-              
-              <View style={styles.sadhanaProgressDots}>
-                <View style={[styles.progDot, { backgroundColor: sadhanaJapa ? colors.accentGold : '#ddd' }]} />
-                <View style={[styles.progDot, { backgroundColor: sadhanaReading ? colors.accentGold : '#ddd' }]} />
-                <View style={[styles.progDot, { backgroundColor: sadhanaArati ? colors.accentGold : '#ddd' }]} />
-                <View style={[styles.progDot, { backgroundColor: sadhanaPrayer ? colors.accentGold : '#ddd' }]} />
-                <View style={[styles.progDot, { backgroundColor: sadhanaLecture ? colors.accentGold : '#ddd' }]} />
-              </View>
+              <Text style={[styles.dashSubValue, { color: colors.textSub }]}>{t.sadhanaRatio}</Text>
             </TouchableOpacity>
 
           </View>
+
+          {/* NBS Live Session Tracker Card */}
+          <View style={[styles.nbsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={styles.nbsCardHeader}>
+              <View>
+                <Text style={[styles.nbsTitle, { color: colors.textMain }]}>{t.nbsTitle}</Text>
+                <Text style={[styles.nbsSubtitle, { color: colors.textSub }]}>{t.nbsSubtitle}</Text>
+              </View>
+              <View style={[styles.liveIndicator, { backgroundColor: '#2196F3' }]}>
+                <Text style={styles.liveIndicatorText}>LIVE TRACKING</Text>
+              </View>
+            </View>
+
+            <View style={styles.nbsTimesContainer}>
+              <View style={styles.nbsTimeRow}>
+                <Text style={{ fontSize: 16, marginRight: 8 }}>🕓</Text>
+                <View>
+                  <Text style={[styles.nbsTimeRange, { color: colors.textMain }]}>4:30 AM – 6:00 AM</Text>
+                  <Text style={[styles.nbsTimeName, { color: colors.textSub }]}>
+                    {lang === 'hi' ? 'श्रीला प्रभुपाद जप सत्र' : lang === 'te' ? 'శ్రీల ప్రభుపాద జప ధ్యానం' : 'Śrīla Prabhupāda Japa Session'}
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={[styles.nbsTimeRow, { marginTop: 10 }]}>
+                <Text style={{ fontSize: 16, marginRight: 8 }}>🕕</Text>
+                <View>
+                  <Text style={[styles.nbsTimeRange, { color: colors.textMain }]}>6:00 AM – 7:00 AM</Text>
+                  <Text style={[styles.nbsTimeName, { color: colors.textSub }]}>
+                    {lang === 'hi' ? 'श्रीमद् भागवतम् प्रवचन' : lang === 'te' ? 'శ్రీమద్ భాగవతం ప్రవచనం' : 'Śrīmad Bhāgavatam Class'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              onPress={() => onToggleNbs(!nbsJoined)}
+              style={[
+                styles.nbsJoinBtn, 
+                { backgroundColor: nbsJoined ? '#2196F3' : colors.accentGold }
+              ]}
+            >
+              <Text style={[styles.nbsJoinBtnText, { color: nbsJoined ? '#FFFFFF' : '#160826' }]}>
+                {nbsJoined ? t.joinedNbs : t.joinNbs}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
         </View>
       </View>
 
       {/* Your Bhakti Journey Streaks banner */}
-      <View style={[styles.streakBanner, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <Text style={[styles.streakTitle, { color: colors.textMain }]}>🔥 {t.myProgress}</Text>
+      <TouchableOpacity 
+        onPress={() => onNavigate(AppTab.JOURNEY)}
+        style={[styles.streakBanner, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+      >
+        <Text style={[styles.streakTitle, { color: colors.textMain }]}>Your Bhakti Journey</Text>
+        <Text style={[styles.streakLabelText, { color: colors.textSub }]}>This Week</Text>
+        
         <View style={styles.streakStatsRow}>
-          <View style={styles.streakStat}>
-            <Text style={[styles.streakStatVal, { color: colors.textMain }]}>{currentStreak}</Text>
-            <Text style={[styles.streakStatLbl, { color: colors.textSub }]}>{t.currentStreak}</Text>
+          {/* Japa Week Graph */}
+          <View style={styles.journeyTeaserCol}>
+            <Text style={[styles.teaserLbl, { color: colors.textSub }]}>Japa</Text>
+            <Text style={[styles.teaserVal, { color: colors.textMain }]}>{japaActiveDays}/7</Text>
+            <Text style={[styles.teaserSub, { color: colors.textSub }]}>Days</Text>
+            <View style={styles.miniBarGraph}>
+              {japaBars.map((bar, idx) => (
+                <View 
+                  key={idx} 
+                  style={[
+                    styles.miniBar, 
+                    { 
+                      height: bar.height || 2, 
+                      backgroundColor: bar.active ? colors.accentGold : colors.cardBorder 
+                    }
+                  ]} 
+                />
+              ))}
+            </View>
           </View>
-          <View style={styles.streakStat}>
-            <Text style={[styles.streakStatVal, { color: colors.textMain }]}>{bestStreak}</Text>
-            <Text style={[styles.streakStatLbl, { color: colors.textSub }]}>{t.bestStreak}</Text>
+
+          {/* Reading Week Graph */}
+          <View style={styles.journeyTeaserCol}>
+            <Text style={[styles.teaserLbl, { color: colors.textSub }]}>Reading</Text>
+            <Text style={[styles.teaserVal, { color: colors.textMain }]}>{readingActiveDays}/7</Text>
+            <Text style={[styles.teaserSub, { color: colors.textSub }]}>Days</Text>
+            <View style={styles.miniBarGraph}>
+              {readingBars.map((bar, idx) => (
+                <View 
+                  key={idx} 
+                  style={[
+                    styles.miniBar, 
+                    { 
+                      height: bar.height || 2, 
+                      backgroundColor: bar.active ? colors.accentGold : colors.cardBorder 
+                    }
+                  ]} 
+                />
+              ))}
+            </View>
           </View>
-          <View style={styles.streakStat}>
-            <Text style={[styles.streakStatVal, { color: colors.textMain }]}>{thisMonthRounds}</Text>
-            <Text style={[styles.streakStatLbl, { color: colors.textSub }]}>{t.thisMonth} {t.rounds}</Text>
+
+          {/* Sadhana Week Graph */}
+          <View style={styles.journeyTeaserCol}>
+            <Text style={[styles.teaserLbl, { color: colors.textSub }]}>Sadhana</Text>
+            <Text style={[styles.teaserVal, { color: colors.textMain }]}>{sadhanaActiveDays}/7</Text>
+            <Text style={[styles.teaserSub, { color: colors.textSub }]}>Days</Text>
+            <View style={styles.miniBarGraph}>
+              {sadhanaBars.map((bar, idx) => (
+                <View 
+                  key={idx} 
+                  style={[
+                    styles.miniBar, 
+                    { 
+                      height: bar.height || 2, 
+                      backgroundColor: bar.active ? '#2D9CDB' : colors.cardBorder 
+                    }
+                  ]} 
+                />
+              ))}
+            </View>
           </View>
         </View>
-      </View>
+
+        <View style={styles.dividerLine} />
+        <View style={styles.journeyQuoteRow}>
+          <Text style={styles.quoteLotusIcon}>🪷</Text>
+          <Text style={[styles.quoteText, { color: colors.textSub }]}>
+            Consistency is more important than perfection. Keep chanting and stay blessed.
+          </Text>
+        </View>
+      </TouchableOpacity>
 
       {/* Official Temple Announcements Feed Section */}
       <View style={styles.updatesSection}>
         <View style={styles.updatesSecHeader}>
-          <Text style={[styles.updatesSecTitle, { color: colors.textMain }]}>📢 {t.officialUpdates}</Text>
-          <TouchableOpacity onPress={() => onNavigate('updates')}>
+          <Text style={[styles.updatesSecTitle, { color: colors.textMain }]}>{t.officialUpdates}</Text>
+          <TouchableOpacity onPress={() => onNavigate(AppTab.UPDATES)}>
             <Text style={[styles.viewAllText, { color: colors.accentGold }]}>View All {'>'}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Important Temple Announcement Card 1 */}
-        <View style={[styles.announcementCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Image 
-            source={{ uri: 'https://images.unsplash.com/photo-1590050752117-238cb061295a?q=80&w=600&auto=format&fit=crop' }} 
-            style={styles.announcementImage} 
-          />
-          <View style={styles.announcementContent}>
-            <View style={styles.announcementMeta}>
-              <Text style={[styles.announcementTag, { backgroundColor: colors.textMain }]}>{t.festivals}</Text>
-              <Text style={[styles.announcementDate, { color: colors.textSub }]}>25 Aug - 27 Aug</Text>
+        {/* Dynamic Announcement Card */}
+        {latestAnnouncement ? (
+          <View style={[styles.announcementCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            {latestAnnouncement.image ? (
+              <Image 
+                source={{ uri: latestAnnouncement.image }} 
+                style={styles.announcementImage} 
+              />
+            ) : null}
+            <View style={styles.announcementContent}>
+              <View style={styles.announcementMeta}>
+                <Text style={[styles.announcementTag, { backgroundColor: colors.accentGold, color: '#160826' }]}>
+                  {latestAnnouncement.type.toUpperCase()}
+                </Text>
+                <Text style={[styles.announcementDate, { color: colors.textSub }]}>{latestAnnouncement.date}</Text>
+              </View>
+              <Text style={[styles.announcementTitle, { color: colors.textMain }]}>{latestAnnouncement.title}</Text>
+              <Text style={[styles.announcementDesc, { color: colors.textSub }]} numberOfLines={2}>
+                {latestAnnouncement.description}
+              </Text>
+              <TouchableOpacity style={styles.viewDetailsBtn} onPress={() => onNavigate(AppTab.UPDATES)}>
+                <Text style={[styles.viewDetailsText, { color: colors.textMain }]}>{t.viewDetails} {'>'}</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={[styles.announcementTitle, { color: colors.textMain }]}>Janmashtami Celebrations</Text>
-            <Text style={[styles.announcementDesc, { color: colors.textSub }]} numberOfLines={2}>
-              Special programs, maha abhishek, kirtan and delicious mahaprasadam feast.
-            </Text>
-            <TouchableOpacity style={styles.viewDetailsBtn}>
-              <Text style={[styles.viewDetailsText, { color: colors.textMain }]}>{t.viewDetails}</Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        ) : (
+          <Text style={{ color: colors.textSub, marginHorizontal: 16 }}>No announcements available.</Text>
+        )}
 
-        {/* Important Temple Announcement Card 2 (Timing Change Alert) */}
-        <View style={[styles.timingsAlertCard, { borderColor: colors.accentGold }]}>
-          <View style={styles.alertIconBg}>
-            <Text style={{ fontSize: 18 }}>⏰</Text>
+        {/* Dynamic Alert Items List */}
+        {alertAnnouncements.map((alert) => (
+          <View key={alert.id} style={[styles.timingsAlertCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View 
+              style={[
+                styles.alertIconBg, 
+                { backgroundColor: alert.type === AnnouncementType.TEMPLE ? 'rgba(241, 189, 60, 0.15)' : 'rgba(140, 26, 26, 0.15)' }
+              ]}
+            >
+              <Text style={{ fontSize: 16 }}>
+                {alert.type === AnnouncementType.TEMPLE ? '⏰' : alert.type === AnnouncementType.CLASSES ? '📖' : '📢'}
+              </Text>
+            </View>
+            <View style={styles.alertContent}>
+              <Text style={[styles.alertTitle, { color: colors.textMain }]}>{alert.title}</Text>
+              <Text style={[styles.alertDateText, { color: colors.textSub }]}>{alert.date}</Text>
+              <Text style={[styles.alertDesc, { color: colors.textSub }]}>
+                {alert.description}
+              </Text>
+            </View>
           </View>
-          <View style={styles.alertContent}>
-            <Text style={[styles.alertTitle, { color: colors.textMain }]}>Mangala Arati Timing Change</Text>
-            <Text style={[styles.alertDesc, { color: colors.textSub }]}>
-              From tomorrow onwards, Mangala Arati starts at 4:15 AM onwards.
-            </Text>
-          </View>
-        </View>
+        ))}
+      </View>
+
+      {/* QUICK LINKS SECTION AT THE BOTTOM */}
+      <View style={styles.quickLinksSection}>
+        <Text style={[styles.quickLinksHeading, { color: colors.textMain }]}>Quick Actions</Text>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.quickLinksScroll}
+        >
+          {quickLinks.map((link, idx) => (
+            <TouchableOpacity 
+              key={idx} 
+              style={styles.quickLinkItem}
+            >
+              <View style={[styles.quickLinkIconBg, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+                <Text style={styles.quickLinkLabelIcon}>{link.icon}</Text>
+              </View>
+              <Text style={[styles.quickLinkLabelText, { color: colors.textSub }]}>
+                {link.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   greetingCard: {
     margin: 16,
     borderRadius: 20,
@@ -185,65 +508,97 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   greetingText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   subGreetingText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     marginTop: 2,
   },
   bellIcon: {
-    padding: 8,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dashboardSection: {
-    marginTop: 10,
+    marginTop: 5,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   dashboardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 12,
+  },
+  viewAllLink: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   dashboardRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   dashCard: {
-    width: '30%',
-    borderRadius: 15,
+    width: '31%',
+    borderRadius: 16,
+    borderWidth: 1,
     padding: 8,
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 150,
-    elevation: 3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    minHeight: 164,
+  },
+  miniBeadRing: {
+    marginVertical: 4,
   },
   dashEmoji: {
-    fontSize: 24,
+    fontSize: 22,
+    marginVertical: 10,
+  },
+  sadhanaListSnippet: {
+    width: '100%',
+    marginVertical: 4,
+  },
+  snippetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  snippetText: {
+    fontSize: 9,
+    fontWeight: '500',
   },
   dashLabel: {
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginTop: 4,
     textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.2,
   },
   dashValue: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   dashValueText: {
     fontSize: 11,
     fontWeight: 'bold',
-    marginVertical: 4,
+    marginVertical: 2,
     textAlign: 'center',
   },
   dashSubValue: {
     fontSize: 8,
-    color: '#8A7D69',
     textAlign: 'center',
+    fontWeight: '500',
   },
   dashButton: {
     paddingVertical: 5,
@@ -253,48 +608,80 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   dashButtonText: {
-    color: '#FFFFFF',
     fontSize: 8,
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  sadhanaProgressDots: {
-    flexDirection: 'row',
-    marginTop: 10,
-    justifyContent: 'center',
-  },
-  progDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginHorizontal: 2,
-  },
   streakBanner: {
     marginHorizontal: 16,
     marginBottom: 16,
-    borderRadius: 15,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
   },
   streakTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 12,
+  },
+  streakLabelText: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+    textTransform: 'uppercase',
   },
   streakStatsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
+    marginTop: 14,
   },
-  streakStat: {
+  journeyTeaserCol: {
+    width: '30%',
     alignItems: 'center',
   },
-  streakStatVal: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  teaserLbl: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
-  streakStatLbl: {
-    fontSize: 11,
+  teaserVal: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginTop: 2,
+  },
+  teaserSub: {
+    fontSize: 8,
+    fontWeight: '500',
+  },
+  miniBarGraph: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 30,
+    marginTop: 8,
+    width: '90%',
+    justifyContent: 'space-between',
+  },
+  miniBar: {
+    width: 4,
+    borderRadius: 2,
+  },
+  dividerLine: {
+    height: 1,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    marginVertical: 12,
+  },
+  journeyQuoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quoteLotusIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  quoteText: {
+    fontSize: 10,
+    lineHeight: 14,
+    flex: 1,
+    fontStyle: 'italic',
   },
   updatesSection: {
     paddingHorizontal: 16,
@@ -306,7 +693,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   updatesSecTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   viewAllText: {
@@ -342,6 +729,7 @@ const styles = StyleSheet.create({
   },
   announcementDate: {
     fontSize: 11,
+    fontWeight: '500',
   },
   announcementTitle: {
     fontSize: 16,
@@ -354,6 +742,7 @@ const styles = StyleSheet.create({
   },
   viewDetailsBtn: {
     marginTop: 12,
+    alignSelf: 'flex-start',
   },
   viewDetailsText: {
     fontSize: 12,
@@ -362,21 +751,20 @@ const styles = StyleSheet.create({
   },
   timingsAlertCard: {
     flexDirection: 'row',
-    borderRadius: 15,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 12,
-    backgroundColor: '#FFFDF0',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   alertIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FFE99E',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    marginTop: 2,
   },
   alertContent: {
     flex: 1,
@@ -385,8 +773,106 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  alertDateText: {
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   alertDesc: {
     fontSize: 11,
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  quickLinksSection: {
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  quickLinksHeading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  quickLinksScroll: {
+    paddingHorizontal: 12,
+  },
+  quickLinkItem: {
+    alignItems: 'center',
+    marginHorizontal: 6,
+    width: 68,
+  },
+  quickLinkIconBg: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  quickLinkLabelIcon: {
+    fontSize: 22,
+  },
+  quickLinkLabelText: {
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 12,
+    fontWeight: '500',
+  },
+  nbsCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 16,
+  },
+  nbsCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  nbsTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  nbsSubtitle: {
+    fontSize: 11,
     marginTop: 2,
+  },
+  liveIndicator: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  liveIndicatorText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  nbsTimesContainer: {
+    marginVertical: 12,
+  },
+  nbsTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  nbsTimeRange: {
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  nbsTimeName: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  nbsJoinBtn: {
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  nbsJoinBtnText: {
+    fontSize: 13,
+    fontWeight: 'bold',
   },
 });

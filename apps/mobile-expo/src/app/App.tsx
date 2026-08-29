@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/accessible-emoji */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,53 +8,188 @@ import {
   Text,
   StatusBar,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import { TRANSLATIONS } from '@temple/models';
+import { TRANSLATIONS, IDevotee, SadhanaLogRequestDto, ISadhanaRecord, IAnnouncement, PreferredLanguage, AppTab } from '@temple/models';
 import { HomeScreen } from './screens/HomeScreen';
 import { SadhanaScreen } from './screens/SadhanaScreen';
 import { UpdatesScreen } from './screens/UpdatesScreen';
 import { JourneyScreen } from './screens/JourneyScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { AuthScreen } from './screens/AuthScreen';
+import { CommunityScreen } from './screens/CommunityScreen';
+import { api } from './utils/api';
 
 export const App = () => {
+  // Authentication State
+  const [jwtToken, setJwtToken] = useState<string>('');
+  const [devotee, setDevotee] = useState<IDevotee | null>(null);
+
   // App Theme & Language settings
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const [lang, setLang] = useState<'en' | 'te'>('en');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(true); // default to dark mode
+  const [lang, setLang] = useState<PreferredLanguage>(PreferredLanguage.ENGLISH);
   const t = TRANSLATIONS[lang];
 
   // Current active navigation tab
-  const [activeTab, setActiveTab] = useState<'home' | 'sadhana' | 'updates' | 'journey' | 'profile'>('home');
+  const [activeTab, setActiveTab] = useState<AppTab>(AppTab.HOME);
+
+  // Loading state
+  const [syncing, setSyncing] = useState<boolean>(false);
 
   // Japa State variables
   const [japaCount, setJapaCount] = useState<number>(0);
-  const [japaRounds, setJapaRounds] = useState<number>(8);
-  const [japaGoal] = useState<number>(16);
+  const [japaRounds, setJapaRounds] = useState<number>(0);
+  const [japaGoal, setJapaGoal] = useState<number>(16);
 
   // Sadhana Check-in States
-  const [sadhanaJapa, setSadhanaJapa] = useState<boolean>(true);
-  const [sadhanaReading, setSadhanaReading] = useState<boolean>(true);
+  const [sadhanaJapa, setSadhanaJapa] = useState<boolean>(false);
+  const [sadhanaReading, setSadhanaReading] = useState<boolean>(false);
   const [sadhanaArati, setSadhanaArati] = useState<boolean>(false);
-  const [sadhanaPrayer, setSadhanaPrayer] = useState<boolean>(true);
+  const [sadhanaPrayer, setSadhanaPrayer] = useState<boolean>(false);
   const [sadhanaLecture, setSadhanaLecture] = useState<boolean>(false);
+  const [nbsJoined, setNbsJoined] = useState<boolean>(false);
 
-  // Streaks statistics
-  const [currentStreak, setCurrentStreak] = useState<number>(12);
-  const [bestStreak] = useState<number>(27);
-  const [thisMonthRounds] = useState<number>(192);
-
-  // Updates Categories Filter
+  // Month Statistics & Updates Category Filter
+  const [thisMonthRounds, setThisMonthRounds] = useState<number>(0);
   const [activeUpdateFilter, setActiveUpdateFilter] = useState<'all' | 'festival' | 'temple' | 'classes' | 'seva'>('all');
+  const [history, setHistory] = useState<ISadhanaRecord[]>([]);
+  const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
+  const [readingProgress, setReadingProgress] = useState<string>('Bhagavad-gita 2.20');
 
-  const sadhanaCompletedCount = [sadhanaJapa, sadhanaReading, sadhanaArati, sadhanaPrayer, sadhanaLecture].filter(Boolean).length;
-  const sadhanaTotalCount = 5;
+  // Date helper (YYYY-MM-DD local timezone)
+  const getLocalDateString = (offsetDays = 0) => {
+    const d = new Date();
+    if (offsetDays !== 0) {
+      d.setDate(d.getDate() + offsetDays);
+    }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-  // Japa Bead Counter logic
-  const handleBeadPress = () => {
+  const todayStr = getLocalDateString();
+
+  // Load today's record and user profile upon tab change or login
+  const syncSadhanaLogs = async (token: string, dateStr: string) => {
+    try {
+      setSyncing(true);
+      const record = await api.getTodayRecord(token, dateStr);
+      if (record) {
+        setJapaRounds(record.japaRoundsCount);
+        setSadhanaJapa(record.japaRoundsCount >= japaGoal);
+        setSadhanaReading(record.readingCompleted);
+        setSadhanaArati(record.mangalaArati);
+        setSadhanaPrayer(record.morningPrayer);
+        setSadhanaLecture(record.spiritualLecture);
+        setNbsJoined(record.nbsJoined || false);
+      } else {
+        // Reset states for a fresh day
+        setJapaRounds(0);
+        setSadhanaJapa(false);
+        setSadhanaReading(false);
+        setSadhanaArati(false);
+        setSadhanaPrayer(false);
+        setSadhanaLecture(false);
+        setNbsJoined(false);
+      }
+
+      // Re-fetch profile to sync streaks and details
+      const profile = await api.getProfile(token);
+      setDevotee(profile);
+      setJapaGoal(profile.japaGoal);
+
+      // Fetch history and announcements dynamically
+      const historyData = await api.getSadhanaHistory(token);
+      setHistory(historyData);
+
+      const announcementsData = await api.getAnnouncements(token);
+      setAnnouncements(announcementsData);
+
+      // Find latest logged reading progress from history to display
+      const lastReadingRecord = historyData.find(r => r.readingProgress);
+      const lastReading = record?.readingProgress || (lastReadingRecord ? lastReadingRecord.readingProgress : 'Bhagavad-gita 2.20');
+      setReadingProgress(lastReading);
+
+      // Calculate this month's total rounds
+      const currentYearMonth = dateStr.substring(0, 7); // "YYYY-MM"
+      const monthlyRounds = historyData
+        .filter(r => r.date.startsWith(currentYearMonth))
+        .reduce((sum, r) => sum + r.japaRoundsCount, 0);
+      setThisMonthRounds(monthlyRounds);
+    } catch (err) {
+      console.log('Error syncing logs: ', err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (jwtToken) {
+      syncSadhanaLogs(jwtToken, todayStr);
+    }
+  }, [jwtToken, activeTab]);
+
+  // Handle logging to backend on check changes
+  const handleSadhanaToggle = async (type: 'japa' | 'reading' | 'arati' | 'prayer' | 'lecture' | 'nbs', newVal: boolean) => {
+    if (!jwtToken) return;
+
+    // Determine current values to send
+    const logData = new SadhanaLogRequestDto(
+      todayStr,
+      type === 'japa' ? (newVal ? japaGoal : 0) : japaRounds,
+      type === 'reading' ? newVal : sadhanaReading,
+      readingProgress,
+      type === 'arati' ? newVal : sadhanaArati,
+      type === 'prayer' ? newVal : sadhanaPrayer,
+      type === 'lecture' ? newVal : sadhanaLecture,
+      type === 'nbs' ? newVal : nbsJoined
+    );
+
+    // Optimistic local state update
+    if (type === 'japa') setSadhanaJapa(newVal);
+    if (type === 'reading') setSadhanaReading(newVal);
+    if (type === 'arati') setSadhanaArati(newVal);
+    if (type === 'prayer') setSadhanaPrayer(newVal);
+    if (type === 'lecture') setSadhanaLecture(newVal);
+    if (type === 'nbs') setNbsJoined(newVal);
+
+    try {
+      await api.submitSadhanaLog(jwtToken, logData);
+      await syncSadhanaLogs(jwtToken, todayStr);
+    } catch (err) {
+      console.log('Failed updating log: ', err);
+    }
+  };
+
+  // Japa Bead Counter logic connected to backend
+  const handleBeadPress = async () => {
     if (japaCount >= 107) {
       setJapaCount(0);
-      setJapaRounds(prev => prev + 1);
-      if (japaRounds + 1 === 8) {
-        setCurrentStreak(prev => prev + 1);
+      const nextRounds = japaRounds + 1;
+      setJapaRounds(nextRounds);
+
+      if (nextRounds >= japaGoal) {
+        setSadhanaJapa(true);
+      }
+
+      if (jwtToken) {
+        try {
+          const logData = new SadhanaLogRequestDto(
+            todayStr,
+            nextRounds,
+            sadhanaReading,
+            readingProgress,
+            sadhanaArati,
+            sadhanaPrayer,
+            sadhanaLecture,
+            nbsJoined
+          );
+          await api.submitSadhanaLog(jwtToken, logData);
+          await syncSadhanaLogs(jwtToken, todayStr);
+        } catch (err) {
+          console.log('Failed saving japa bead increment: ', err);
+        }
       }
     } else {
       setJapaCount(prev => prev + 1);
@@ -63,17 +198,17 @@ export const App = () => {
 
   // Color Tokens based on Light/Dark Mode
   const colors = {
-    bg: isDarkMode ? '#120A2A' : '#FDFBF7',
-    card: isDarkMode ? '#1A123D' : '#F7F3EB',
-    cardBorder: isDarkMode ? '#2E245E' : '#E8DFCE',
-    textMain: isDarkMode ? '#FFFFFF' : '#8C1D1D',
-    textSub: isDarkMode ? '#C7BBE6' : '#5C5446',
-    accentGold: '#D4AF37',
+    bg: isDarkMode ? '#160826' : '#FAF6EE',
+    card: isDarkMode ? '#25143E' : '#FFFDFC',
+    cardBorder: isDarkMode ? '#3A245E' : '#EADFC9',
+    textMain: isDarkMode ? '#FFFFFF' : '#8C1A1A',
+    textSub: isDarkMode ? '#D4C9E8' : '#6B5E4F',
+    accentGold: '#F1BD3C',
     accentGreen: '#27AE60',
-    navBg: isDarkMode ? '#0F0824' : '#FFFFFF',
-    navActive: '#D4AF37',
-    navInactive: isDarkMode ? '#6E619E' : '#B0A38F',
-    divider: isDarkMode ? '#271D54' : '#EBE5D8',
+    navBg: isDarkMode ? '#10051C' : '#FFFFFF',
+    navActive: '#F1BD3C',
+    navInactive: isDarkMode ? '#796796' : '#B0A38F',
+    divider: isDarkMode ? '#271844' : '#EBE5D8',
     pureWhite: '#FFFFFF',
     darkPurple: '#1F1545',
     creamAccent: '#FFFDF9',
@@ -94,34 +229,55 @@ export const App = () => {
 
   const activeBeadIndex = Math.floor((japaCount / 108) * beadCount);
 
+  // If not logged in, show the login flow
+  if (!jwtToken || !devotee) {
+    return (
+      <>
+        <StatusBar barStyle="light-content" backgroundColor="#160826" />
+        <AuthScreen
+          colors={colors}
+          onLoginSuccess={(token, user) => {
+            setJwtToken(token);
+            setDevotee(user);
+          }}
+          isDarkMode={isDarkMode}
+        />
+      </>
+    );
+  }
+
+  const sadhanaCompletedCount = [sadhanaJapa, sadhanaReading, sadhanaArati, sadhanaPrayer, sadhanaLecture].filter(Boolean).length;
+  const sadhanaTotalCount = 5;
+
   return (
     <>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bg }]}>
-        
+
         {/* TOP BRANDING BAR */}
-        <View style={[styles.headerBar, { borderBottomColor: colors.divider }]}>
+        <View style={[styles.headerBar, { borderBottomColor: colors.divider, backgroundColor: colors.bg }]}>
           <View style={styles.headerLogoContainer}>
             <View style={[styles.avatarDummy, { backgroundColor: colors.accentGold }]}>
               <Text style={styles.avatarText}>ॐ</Text>
             </View>
             <View>
               <Text style={[styles.headerTitle, { color: colors.textMain }]}>ISKCON VIZAG</Text>
-              <Text style={[styles.headerSubtitle, { color: colors.textSub }]}>My Bhakti. My Temple.</Text>
+              <Text style={[styles.headerSubtitle, { color: colors.textSub }]}>My Bhakti. My Temple. My Family.</Text>
             </View>
           </View>
-          
+
           <View style={styles.headerControls}>
+            {syncing && <ActivityIndicator size="small" color={colors.accentGold} style={{ marginRight: 8 }} />}
             <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)} style={styles.iconButton}>
               <Text style={{ fontSize: 20 }}>{isDarkMode ? '☀️' : '🌙'}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              onPress={() => setLang(prev => prev === 'en' ? 'te' : 'en')}
-              style={[styles.langToggleBtn, { borderColor: colors.textMain }]}
+            <TouchableOpacity
+              onPress={() => setLang(prev => prev === PreferredLanguage.ENGLISH ? PreferredLanguage.TELUGU : prev === PreferredLanguage.TELUGU ? PreferredLanguage.HINDI : PreferredLanguage.ENGLISH)}
+              style={[styles.langToggleBtn, { borderColor: colors.accentGold }]}
             >
-              <Text style={[styles.langToggleText, { color: colors.textMain }]}>
-                {lang === 'en' ? 'తెలుగు' : 'English'}
+              <Text style={[styles.langToggleText, { color: colors.accentGold }]}>
+                {lang === PreferredLanguage.ENGLISH ? 'తెలుగు' : lang === PreferredLanguage.TELUGU ? 'हिंदी' : 'English'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -129,8 +285,8 @@ export const App = () => {
 
         {/* MAIN BODY CONTAINER WITH SCROLL */}
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {activeTab === 'home' && (
-            <HomeScreen 
+          {activeTab === AppTab.HOME && (
+            <HomeScreen
               t={t}
               colors={colors}
               japaRounds={japaRounds}
@@ -142,16 +298,23 @@ export const App = () => {
               sadhanaArati={sadhanaArati}
               sadhanaPrayer={sadhanaPrayer}
               sadhanaLecture={sadhanaLecture}
-              currentStreak={currentStreak}
-              bestStreak={bestStreak}
+              currentStreak={devotee.currentStreak}
+              bestStreak={devotee.bestStreak}
               thisMonthRounds={thisMonthRounds}
               onNavigate={setActiveTab}
               isDarkMode={isDarkMode}
+              userName={devotee.name}
+              history={history}
+              announcements={announcements}
+              readingProgress={readingProgress}
+              nbsJoined={nbsJoined}
+              onToggleNbs={(val) => handleSadhanaToggle('nbs', val)}
+              lang={lang}
             />
           )}
 
-          {activeTab === 'sadhana' && (
-            <SadhanaScreen 
+          {activeTab === AppTab.SADHANA && (
+            <SadhanaScreen
               t={t}
               colors={colors}
               japaRounds={japaRounds}
@@ -161,75 +324,98 @@ export const App = () => {
               beads={beads}
               activeBeadIndex={activeBeadIndex}
               sadhanaJapa={sadhanaJapa}
-              setSadhanaJapa={setSadhanaJapa}
+              setSadhanaJapa={(val) => handleSadhanaToggle('japa', val)}
               sadhanaReading={sadhanaReading}
-              setSadhanaReading={setSadhanaReading}
+              setSadhanaReading={(val) => handleSadhanaToggle('reading', val)}
               sadhanaArati={sadhanaArati}
-              setSadhanaArati={setSadhanaArati}
+              setSadhanaArati={(val) => handleSadhanaToggle('arati', val)}
               sadhanaPrayer={sadhanaPrayer}
-              setSadhanaPrayer={setSadhanaPrayer}
+              setSadhanaPrayer={(val) => handleSadhanaToggle('prayer', val)}
               sadhanaLecture={sadhanaLecture}
-              setSadhanaLecture={setSadhanaLecture}
+              setSadhanaLecture={(val) => handleSadhanaToggle('lecture', val)}
               radius={radius}
+              readingProgress={readingProgress}
             />
           )}
 
-          {activeTab === 'updates' && (
-            <UpdatesScreen 
+          {activeTab === AppTab.UPDATES && (
+            <UpdatesScreen
               t={t}
               colors={colors}
               activeUpdateFilter={activeUpdateFilter}
               setActiveUpdateFilter={setActiveUpdateFilter}
+              token={jwtToken}
             />
           )}
 
-          {activeTab === 'journey' && (
-            <JourneyScreen 
+          {activeTab === AppTab.COMMUNITY && (
+            <CommunityScreen
               t={t}
               colors={colors}
-              currentStreak={currentStreak}
-              bestStreak={bestStreak}
-              thisMonthRounds={thisMonthRounds}
             />
           )}
 
-          {activeTab === 'profile' && (
-            <ProfileScreen 
+          {activeTab === AppTab.JOURNEY && (
+            <JourneyScreen
+              t={t}
+              colors={colors}
+              currentStreak={devotee.currentStreak}
+              bestStreak={devotee.bestStreak}
+              thisMonthRounds={thisMonthRounds}
+              onBack={() => setActiveTab(AppTab.HOME)}
+              token={jwtToken}
+            />
+          )}
+
+          {activeTab === AppTab.PROFILE && (
+            <ProfileScreen
               t={t}
               colors={colors}
               lang={lang}
               setLang={setLang}
               isDarkMode={isDarkMode}
               setIsDarkMode={setIsDarkMode}
+              userName={devotee.name}
+              userEmail={devotee.email}
+              userPhone={devotee.phone}
+              totalRoundsChanted={devotee.totalRoundsChanted}
+              currentStreak={devotee.currentStreak}
+              bestStreak={devotee.bestStreak}
+              onLogout={() => {
+                setJwtToken('');
+                setDevotee(null);
+                setActiveTab(AppTab.HOME);
+              }}
+              onNavigate={setActiveTab}
             />
           )}
         </ScrollView>
 
         {/* BOTTOM TAB BAR */}
         <View style={[styles.navTabBar, { backgroundColor: colors.navBg, borderTopColor: colors.divider }]}>
-          <TouchableOpacity onPress={() => setActiveTab('home')} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === 'home' ? colors.navActive : colors.navInactive }]}>🏠</Text>
-            <Text style={[styles.navTabText, { color: activeTab === 'home' ? colors.navActive : colors.navInactive }]}>{t.home}</Text>
+          <TouchableOpacity onPress={() => setActiveTab(AppTab.HOME)} style={styles.navTabItem}>
+            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.HOME ? colors.navActive : colors.navInactive }]}>🏠</Text>
+            <Text style={[styles.navTabText, { color: activeTab === AppTab.HOME ? colors.navActive : colors.navInactive }]}>{t.home}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setActiveTab('sadhana')} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === 'sadhana' ? colors.navActive : colors.navInactive }]}>📿</Text>
-            <Text style={[styles.navTabText, { color: activeTab === 'sadhana' ? colors.navActive : colors.navInactive }]}>{t.sadhanaTab}</Text>
+          <TouchableOpacity onPress={() => setActiveTab(AppTab.SADHANA)} style={styles.navTabItem}>
+            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.SADHANA ? colors.navActive : colors.navInactive }]}>📿</Text>
+            <Text style={[styles.navTabText, { color: activeTab === AppTab.SADHANA ? colors.navActive : colors.navInactive }]}>{t.sadhanaTab}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setActiveTab('updates')} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === 'updates' ? colors.navActive : colors.navInactive }]}>📢</Text>
-            <Text style={[styles.navTabText, { color: activeTab === 'updates' ? colors.navActive : colors.navInactive }]}>{t.updatesTab}</Text>
+          <TouchableOpacity onPress={() => setActiveTab(AppTab.UPDATES)} style={styles.navTabItem}>
+            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.UPDATES ? colors.navActive : colors.navInactive }]}>📢</Text>
+            <Text style={[styles.navTabText, { color: activeTab === AppTab.UPDATES ? colors.navActive : colors.navInactive }]}>{t.updatesTab}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setActiveTab('journey')} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === 'journey' ? colors.navActive : colors.navInactive }]}>🌱</Text>
-            <Text style={[styles.navTabText, { color: activeTab === 'journey' ? colors.navActive : colors.navInactive }]}>{t.journeyTab}</Text>
+          <TouchableOpacity onPress={() => setActiveTab(AppTab.COMMUNITY)} style={styles.navTabItem}>
+            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.COMMUNITY ? colors.navActive : colors.navInactive }]}>👥</Text>
+            <Text style={[styles.navTabText, { color: activeTab === AppTab.COMMUNITY ? colors.navActive : colors.navInactive }]}>Community</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setActiveTab('profile')} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === 'profile' ? colors.navActive : colors.navInactive }]}>👤</Text>
-            <Text style={[styles.navTabText, { color: activeTab === 'profile' ? colors.navActive : colors.navInactive }]}>{t.profileTab}</Text>
+          <TouchableOpacity onPress={() => setActiveTab(AppTab.PROFILE)} style={styles.navTabItem}>
+            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.PROFILE ? colors.navActive : colors.navInactive }]}>👤</Text>
+            <Text style={[styles.navTabText, { color: activeTab === AppTab.PROFILE ? colors.navActive : colors.navInactive }]}>{t.profileTab}</Text>
           </TouchableOpacity>
         </View>
 
@@ -266,7 +452,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   avatarText: {
-    color: '#FFFFFF',
+    color: '#160826',
     fontWeight: 'bold',
     fontSize: 20,
   },
@@ -276,7 +462,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   headerSubtitle: {
-    fontSize: 11,
+    fontSize: 10,
   },
   headerControls: {
     flexDirection: 'row',

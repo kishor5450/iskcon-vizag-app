@@ -30,6 +30,6 @@ export class SevaOpportunityEntity implements ISevaOpportunity {
   @Column({ type: 'boolean', default: true })
   official: boolean;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt: string;
 }

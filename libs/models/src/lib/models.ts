@@ -4,6 +4,15 @@ export enum PreferredLanguage {
   HINDI = 'hi',
 }
 
+export enum AppTab {
+  HOME = 'home',
+  SADHANA = 'sadhana',
+  UPDATES = 'updates',
+  COMMUNITY = 'community',
+  PROFILE = 'profile',
+  JOURNEY = 'journey',
+}
+
 export enum DevoteeRole {
   DEVOTEE = 'devotee',
   ADMIN = 'admin',
@@ -41,6 +50,7 @@ export interface ISadhanaRecord {
   mangalaArati: boolean;
   morningPrayer: boolean;
   spiritualLecture: boolean;
+  nbsJoined: boolean;
   createdAt: string;
 }
 
@@ -156,6 +166,7 @@ export class SadhanaLogRequestDto {
   mangalaArati: boolean;
   morningPrayer: boolean;
   spiritualLecture: boolean;
+  nbsJoined: boolean;
 
   constructor(
     date: string,
@@ -164,7 +175,8 @@ export class SadhanaLogRequestDto {
     readingProgress: string | undefined,
     mangalaArati: boolean,
     morningPrayer: boolean,
-    spiritualLecture: boolean
+    spiritualLecture: boolean,
+    nbsJoined: boolean
   ) {
     this.date = date;
     this.japaRoundsCount = japaRoundsCount;
@@ -173,6 +185,7 @@ export class SadhanaLogRequestDto {
     this.mangalaArati = mangalaArati;
     this.morningPrayer = morningPrayer;
     this.spiritualLecture = spiritualLecture;
+    this.nbsJoined = nbsJoined;
   }
 }
 
@@ -283,6 +296,10 @@ export class TranslationKeysDto {
   classes: string;
   sevaCat: string;
   tapBead: string;
+  nbsTitle: string;
+  nbsSubtitle: string;
+  joinNbs: string;
+  joinedNbs: string;
 
   constructor(fields: {
     greeting: string;
@@ -332,6 +349,10 @@ export class TranslationKeysDto {
     classes: string;
     sevaCat: string;
     tapBead: string;
+    nbsTitle: string;
+    nbsSubtitle: string;
+    joinNbs: string;
+    joinedNbs: string;
   }) {
     this.greeting = fields.greeting;
     this.morning = fields.morning;
@@ -380,16 +401,22 @@ export class TranslationKeysDto {
     this.classes = fields.classes;
     this.sevaCat = fields.sevaCat;
     this.tapBead = fields.tapBead;
+    this.nbsTitle = fields.nbsTitle;
+    this.nbsSubtitle = fields.nbsSubtitle;
+    this.joinNbs = fields.joinNbs;
+    this.joinedNbs = fields.joinedNbs;
   }
 }
 
 export class TranslationsModel {
   en: TranslationKeysDto;
   te: TranslationKeysDto;
+  hi: TranslationKeysDto;
 
-  constructor(en: TranslationKeysDto, te: TranslationKeysDto) {
+  constructor(en: TranslationKeysDto, te: TranslationKeysDto, hi: TranslationKeysDto) {
     this.en = en;
     this.te = te;
+    this.hi = hi;
   }
 }
 
@@ -442,6 +469,10 @@ export const TRANSLATIONS = new TranslationsModel(
     classes: "Classes",
     sevaCat: "Seva",
     tapBead: "Tap Bead to Count Japa",
+    nbsTitle: "Nityam Bhagavata Sevaya (NBS)",
+    nbsSubtitle: "Daily Devotional Session",
+    joinNbs: "Check-in NBS Session",
+    joinedNbs: "✓ Attended NBS Today",
   }),
   new TranslationKeysDto({
     greeting: "హరే కృష్ణ 🙏",
@@ -473,13 +504,13 @@ export const TRANSLATIONS = new TranslationsModel(
     language: "భాష",
     changeLanguage: "Change Language",
     lightMode: "లైట్ మోడ్",
-    darkMode: "డార్క్ మోడ్",
+    darkMode: "డార్క్ మోड",
     currentStreak: "ప్రస్తుత వరుస",
     mangalaArati: "మంగళ ఆరతి",
     morningPrayer: "ఉదయ ప్రార్థన",
     spiritualLecture: "ఆధ్యాత్మిక ఉపన్యాసం",
     official: "అధికారిక ఇస్కాన్ వైజాగ్",
-    community: "కమ్యూనిటీ",
+    community: "కమ्यूనిటీ",
     viewDetails: "వివరాలు చూడండి",
     seva: "సేవ అవకాశం",
     gitaVerse: "భగవద్గీత",
@@ -491,6 +522,63 @@ export const TRANSLATIONS = new TranslationsModel(
     classes: "తరగతులు",
     sevaCat: "సేవ",
     tapBead: "జపం చేయడానికి పూసను నొక్కండి",
+    nbsTitle: "నిత్యం భాగవత సేవయ (NBS)",
+    nbsSubtitle: "రోజువారీ భక్తి కార్యక్రమం",
+    joinNbs: "NBS సెషన్‌లో చేరండి",
+    joinedNbs: "✓ ఈరోజు NBS కి హాజరయ్యారు",
+  }),
+  new TranslationKeysDto({
+    greeting: "हरे कृष्ण 🙏",
+    morning: "शुभ प्रभात, अर्जुन",
+    myBhakti: "मेरी भक्ति",
+    japa: "जप",
+    rounds: "माला",
+    todaysReading: "आज का पठन",
+    todaysSadhana: "आज की साधना",
+    myProgress: "मेरी प्रगति",
+    officialUpdates: "इस्कॉन विजाग से महत्वपूर्ण",
+    home: "होम",
+    sadhanaTab: "साधना",
+    updatesTab: "अपडेट्स",
+    journeyTab: "मेरी यात्रा",
+    profileTab: "प्रोफाइल",
+    readNow: "अभी पढ़ें",
+    continueJapa: "जप जारी रखें",
+    tapToCount: "गिनने के लिए दबाएं",
+    completed: "पूर्ण",
+    streaks: "दिनों का सिलसिला",
+    days: "दिन",
+    bestStreak: "सर्वश्रेष्ठ सिलसिला",
+    thisMonth: "इस महीने",
+    japaHistory: "जप इतिहास",
+    week: "सप्ताह",
+    month: "महीना",
+    year: "वर्ष",
+    language: "भाषा",
+    changeLanguage: "भाषा बदलें",
+    lightMode: "लाइट मोड",
+    darkMode: "डार्क मोड",
+    currentStreak: "वर्तमान सिलसिला",
+    mangalaArati: "मंगला आरती",
+    morningPrayer: "सुबह की प्रार्थना",
+    spiritualLecture: "आध्यात्मिक प्रवचन",
+    official: "आधिकारिक इस्कॉन विजाग",
+    community: "समुदाय",
+    viewDetails: "विवरण देखें",
+    seva: "सेवा का अवसर",
+    gitaVerse: "भगवद-गीता",
+    gitaVerseRef: "अध्याय 2, श्लोक 20",
+    sadhanaRatio: "पूर्ण",
+    all: "सभी",
+    festivals: "त्यौहार",
+    temple: "मंदिर",
+    classes: "कक्षाएं",
+    sevaCat: "सेवा",
+    tapBead: "जप गिनने के लिए मनके को दबाएं",
+    nbsTitle: "नित्यं भागवत सेवया (NBS)",
+    nbsSubtitle: "दैनिक भक्ति सत्र",
+    joinNbs: "NBS सत्र में शामिल हों",
+    joinedNbs: "✓ आज NBS सत्र में उपस्थित थे",
   })
 );
 

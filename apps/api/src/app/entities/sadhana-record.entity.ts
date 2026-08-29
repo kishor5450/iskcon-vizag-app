@@ -31,7 +31,10 @@ export class SadhanaRecordEntity implements ISadhanaRecord {
   @Column({ type: 'boolean', default: false })
   spiritualLecture: boolean;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @Column({ type: 'boolean', default: false })
+  nbsJoined: boolean;
+
+  @CreateDateColumn()
   createdAt: string;
 
   @ManyToOne(() => DevoteeEntity, (devotee) => devotee.sadhanaRecords, { onDelete: 'CASCADE' })

@@ -15,7 +15,7 @@ export class AnnouncementEntity implements IAnnouncement {
   @Column({ type: 'varchar', length: 500, nullable: true })
   image?: string;
 
-  @Column({ type: 'enum', enum: AnnouncementType, default: AnnouncementType.GENERAL })
+  @Column({ type: 'simple-enum', enum: AnnouncementType, default: AnnouncementType.GENERAL })
   type: AnnouncementType;
 
   @Column({ type: 'varchar', length: 50 })
@@ -30,6 +30,6 @@ export class AnnouncementEntity implements IAnnouncement {
   @Column({ type: 'boolean', default: true })
   official: boolean; // true = Official ISKCON Vizag updates, false = Community feed
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt: string;
 }

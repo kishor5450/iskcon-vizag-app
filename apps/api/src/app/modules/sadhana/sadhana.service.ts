@@ -54,6 +54,7 @@ export class SadhanaService {
       record.mangalaArati = dto.mangalaArati ?? record.mangalaArati;
       record.morningPrayer = dto.morningPrayer ?? record.morningPrayer;
       record.spiritualLecture = dto.spiritualLecture ?? record.spiritualLecture;
+      record.nbsJoined = dto.nbsJoined ?? record.nbsJoined;
     } else {
       // Create new record
       record = this.recordRepository.create({
@@ -65,6 +66,7 @@ export class SadhanaService {
         mangalaArati: dto.mangalaArati ?? false,
         morningPrayer: dto.morningPrayer ?? false,
         spiritualLecture: dto.spiritualLecture ?? false,
+        nbsJoined: dto.nbsJoined ?? false,
       });
     }
 

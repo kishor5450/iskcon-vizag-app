@@ -31,13 +31,13 @@ export class DevoteeEntity implements IDevotee {
   @Column({ type: 'int', default: 0 })
   totalRoundsChanted: number;
 
-  @Column({ type: 'enum', enum: PreferredLanguage, default: PreferredLanguage.ENGLISH })
+  @Column({ type: 'simple-enum', enum: PreferredLanguage, default: PreferredLanguage.ENGLISH })
   preferredLanguage: PreferredLanguage;
 
-  @Column({ type: 'enum', enum: DevoteeRole, default: DevoteeRole.DEVOTEE })
+  @Column({ type: 'simple-enum', enum: DevoteeRole, default: DevoteeRole.DEVOTEE })
   role: DevoteeRole;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   createdAt: string;
 
   @OneToMany(() => SadhanaRecordEntity, (record) => record.devotee)
