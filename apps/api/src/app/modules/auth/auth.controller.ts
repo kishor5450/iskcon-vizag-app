@@ -31,4 +31,19 @@ export class AuthController {
   ): Promise<IDevotee> {
     return this.authService.updatePreferences(req.user.sub, body.preferredLanguage, body.japaGoal);
   }
+
+  @UseGuards(AuthGuard)
+  @Get('devotees')
+  async getAllDevotees(): Promise<IDevotee[]> {
+    return this.authService.getAllDevotees();
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('avatar')
+  async updateAvatar(
+    @Request() req,
+    @Body() body: { avatarUrl: string }
+  ): Promise<IDevotee> {
+    return this.authService.updateAvatar(req.user.sub, body.avatarUrl);
+  }
 }

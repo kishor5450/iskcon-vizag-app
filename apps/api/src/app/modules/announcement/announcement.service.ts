@@ -98,4 +98,8 @@ export class AnnouncementService implements OnModuleInit {
       await this.announcementRepository.save(this.announcementRepository.create(item));
     }
   }
+
+  async delete(id: number): Promise<void> {
+    await this.announcementRepository.delete(id);
+  }
 }

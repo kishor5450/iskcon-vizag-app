@@ -11,6 +11,7 @@ export enum AppTab {
   COMMUNITY = 'community',
   PROFILE = 'profile',
   JOURNEY = 'journey',
+  ADMIN = 'admin',
 }
 
 export enum DevoteeRole {
@@ -37,6 +38,7 @@ export interface IDevotee {
   totalRoundsChanted: number;
   preferredLanguage: PreferredLanguage;
   role: DevoteeRole;
+  avatarUrl?: string;
   createdAt: string;
 }
 
@@ -122,19 +124,22 @@ export class RegisterRequestDto {
   passwordPlain: string;
   phone?: string;
   preferredLanguage?: PreferredLanguage;
+  avatarUrl?: string;
 
   constructor(
     name: string,
     email: string,
     passwordPlain: string,
     phone?: string,
-    preferredLanguage?: PreferredLanguage
+    preferredLanguage?: PreferredLanguage,
+    avatarUrl?: string
   ) {
     this.name = name;
     this.email = email;
     this.passwordPlain = passwordPlain;
     this.phone = phone;
     this.preferredLanguage = preferredLanguage;
+    this.avatarUrl = avatarUrl;
   }
 }
 

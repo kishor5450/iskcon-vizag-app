@@ -9,8 +9,9 @@ import {
   StatusBar,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
-import { TRANSLATIONS, IDevotee, SadhanaLogRequestDto, ISadhanaRecord, IAnnouncement, PreferredLanguage, AppTab } from '@temple/models';
+import { TRANSLATIONS, IDevotee, SadhanaLogRequestDto, ISadhanaRecord, IAnnouncement, PreferredLanguage, AppTab, DevoteeRole } from '@temple/models';
 import { HomeScreen } from './screens/HomeScreen';
 import { SadhanaScreen } from './screens/SadhanaScreen';
 import { UpdatesScreen } from './screens/UpdatesScreen';
@@ -18,6 +19,7 @@ import { JourneyScreen } from './screens/JourneyScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { AuthScreen } from './screens/AuthScreen';
 import { CommunityScreen } from './screens/CommunityScreen';
+import { AdminScreen } from './screens/AdminScreen';
 import { api } from './utils/api';
 
 export const App = () => {
@@ -257,9 +259,10 @@ export const App = () => {
         {/* TOP BRANDING BAR */}
         <View style={[styles.headerBar, { borderBottomColor: colors.divider, backgroundColor: colors.bg }]}>
           <View style={styles.headerLogoContainer}>
-            <View style={[styles.avatarDummy, { backgroundColor: colors.accentGold }]}>
-              <Text style={styles.avatarText}>ॐ</Text>
-            </View>
+            <Image
+              source={{ uri: 'https://img.icons8.com/ios-filled/100/d7a15c/lotus.png' }}
+              style={styles.logoImage}
+            />
             <View>
               <Text style={[styles.headerTitle, { color: colors.textMain }]}>ISKCON VIZAG</Text>
               <Text style={[styles.headerSubtitle, { color: colors.textSub }]}>My Bhakti. My Temple. My Family.</Text>
@@ -310,6 +313,7 @@ export const App = () => {
               nbsJoined={nbsJoined}
               onToggleNbs={(val) => handleSadhanaToggle('nbs', val)}
               lang={lang}
+              avatarUrl={devotee.avatarUrl}
             />
           )}
 
@@ -387,6 +391,18 @@ export const App = () => {
                 setActiveTab(AppTab.HOME);
               }}
               onNavigate={setActiveTab}
+              avatarUrl={devotee.avatarUrl}
+              onUpdateAvatar={(url) => setDevotee((prev) => (prev ? { ...prev, avatarUrl: url } : null))}
+              token={jwtToken}
+            />
+          )}
+
+          {activeTab === AppTab.ADMIN && (
+            <AdminScreen
+              t={t}
+              colors={colors}
+              token={jwtToken}
+              onBack={() => setActiveTab(AppTab.HOME)}
             />
           )}
         </ScrollView>
@@ -394,29 +410,58 @@ export const App = () => {
         {/* BOTTOM TAB BAR */}
         <View style={[styles.navTabBar, { backgroundColor: colors.navBg, borderTopColor: colors.divider }]}>
           <TouchableOpacity onPress={() => setActiveTab(AppTab.HOME)} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.HOME ? colors.navActive : colors.navInactive }]}>🏠</Text>
+            <View style={styles.tabIconWrapper}>
+              <Text style={[styles.navTabIcon, { color: activeTab === AppTab.HOME ? colors.navActive : colors.navInactive }]}>🏠</Text>
+            </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.HOME ? colors.navActive : colors.navInactive }]}>{t.home}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab(AppTab.SADHANA)} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.SADHANA ? colors.navActive : colors.navInactive }]}>📿</Text>
+            <View style={styles.tabIconWrapper}>
+              <Text style={[styles.navTabIcon, { color: activeTab === AppTab.SADHANA ? colors.navActive : colors.navInactive }]}>📿</Text>
+            </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.SADHANA ? colors.navActive : colors.navInactive }]}>{t.sadhanaTab}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab(AppTab.UPDATES)} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.UPDATES ? colors.navActive : colors.navInactive }]}>📢</Text>
+            <View style={styles.tabIconWrapper}>
+              <Text style={[styles.navTabIcon, { color: activeTab === AppTab.UPDATES ? colors.navActive : colors.navInactive }]}>📢</Text>
+            </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.UPDATES ? colors.navActive : colors.navInactive }]}>{t.updatesTab}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab(AppTab.COMMUNITY)} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.COMMUNITY ? colors.navActive : colors.navInactive }]}>👥</Text>
+            <View style={styles.tabIconWrapper}>
+              <Text style={[styles.navTabIcon, { color: activeTab === AppTab.COMMUNITY ? colors.navActive : colors.navInactive }]}>👥</Text>
+            </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.COMMUNITY ? colors.navActive : colors.navInactive }]}>Community</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab(AppTab.PROFILE)} style={styles.navTabItem}>
-            <Text style={[styles.navTabIcon, { color: activeTab === AppTab.PROFILE ? colors.navActive : colors.navInactive }]}>👤</Text>
+            <View style={styles.tabIconWrapper}>
+              {devotee?.avatarUrl ? (
+                <Image 
+                  source={{ uri: devotee.avatarUrl }} 
+                  style={[
+                    styles.navTabAvatar, 
+                    { borderColor: activeTab === AppTab.PROFILE ? colors.navActive : 'transparent' }
+                  ]} 
+                />
+              ) : (
+                <Text style={[styles.navTabIcon, { color: activeTab === AppTab.PROFILE ? colors.navActive : colors.navInactive }]}>👤</Text>
+              )}
+            </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.PROFILE ? colors.navActive : colors.navInactive }]}>{t.profileTab}</Text>
           </TouchableOpacity>
+
+          {devotee?.role === DevoteeRole.ADMIN && (
+            <TouchableOpacity onPress={() => setActiveTab(AppTab.ADMIN)} style={styles.navTabItem}>
+              <View style={styles.tabIconWrapper}>
+                <Text style={[styles.navTabIcon, { color: activeTab === AppTab.ADMIN ? colors.navActive : colors.navInactive }]}>🛠️</Text>
+              </View>
+              <Text style={[styles.navTabText, { color: activeTab === AppTab.ADMIN ? colors.navActive : colors.navInactive }]}>Admin</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
       </SafeAreaView>
@@ -443,13 +488,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatarDummy: {
+  logoImage: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: 10,
+    resizeMode: 'contain',
   },
   avatarText: {
     color: '#160826',
@@ -504,6 +547,18 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: 'bold',
     marginTop: 2,
+  },
+  navTabAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+  },
+  tabIconWrapper: {
+    height: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 2,
   },
 });
 

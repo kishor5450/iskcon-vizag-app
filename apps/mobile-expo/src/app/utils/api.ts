@@ -137,4 +137,76 @@ export const api = {
 
     return res.json();
   },
+
+  async getDevotees(token: string): Promise<IDevotee[]> {
+    const res = await fetch(`${API_URL}/auth/devotees`, {
+      method: 'GET',
+      headers: getHeaders(token),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to fetch devotees list');
+    }
+    return res.json();
+  },
+
+  async createAnnouncement(token: string, dto: any): Promise<IAnnouncement> {
+    const res = await fetch(`${API_URL}/announcements`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(dto),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to create announcement');
+    }
+    return res.json();
+  },
+
+  async deleteAnnouncement(token: string, id: number): Promise<void> {
+    const res = await fetch(`${API_URL}/announcements/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(token),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to delete announcement');
+    }
+  },
+
+  async uploadAnnouncementImage(token: string, fileUri: string): Promise<{ url: string }> {
+    const formData = new FormData();
+    const filename = fileUri.split('/').pop() || 'upload.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+    formData.append('file', {
+      uri: Platform.OS === 'android' ? fileUri : fileUri.replace('file://', ''),
+      name: filename,
+      type,
+    } as any);
+
+    const res = await fetch(`${API_URL}/announcements/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      throw new Error('Image upload failed');
+    }
+
+    return res.json();
+  },
+
+  async updateAvatar(token: string, avatarUrl: string): Promise<IDevotee> {
+    const res = await fetch(`${API_URL}/auth/avatar`, {
+      method: 'PUT',
+      headers: getHeaders(token),
+      body: JSON.stringify({ avatarUrl }),
+    });
+    if (!res.ok) {
+      throw new Error('Failed to update avatar image');
+    }
+    return res.json();
+  },
 };

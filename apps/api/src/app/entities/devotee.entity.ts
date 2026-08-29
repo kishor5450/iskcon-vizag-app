@@ -37,6 +37,9 @@ export class DevoteeEntity implements IDevotee {
   @Column({ type: 'simple-enum', enum: DevoteeRole, default: DevoteeRole.DEVOTEE })
   role: DevoteeRole;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  avatarUrl?: string;
+
   @CreateDateColumn()
   createdAt: string;
 

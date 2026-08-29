@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator } from 'react-native';
 import { PreferredLanguage, AppTab } from '@temple/models';
+import * as ImagePicker from 'expo-image-picker';
+import { api } from '../utils/api';
 
 interface ProfileScreenProps {
   t: any;
@@ -17,6 +19,9 @@ interface ProfileScreenProps {
   bestStreak?: number;
   onLogout: () => void;
   onNavigate: (tab: AppTab) => void;
+  avatarUrl?: string;
+  onUpdateAvatar?: (url: string) => void;
+  token?: string;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -34,8 +39,41 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   bestStreak = 0,
   onLogout,
   onNavigate,
+  avatarUrl,
+  onUpdateAvatar = () => {},
+  token,
 }) => {
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
+  const [updatingPhoto, setUpdatingPhoto] = useState(false);
+
+  const handlePickAvatar = async () => {
+    if (!token) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Permission to access photo gallery is required to update avatar.');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setUpdatingPhoto(true);
+        const uploadRes = await api.uploadAnnouncementImage(token, result.assets[0].uri);
+        await api.updateAvatar(token, uploadRes.url);
+        onUpdateAvatar(uploadRes.url);
+      }
+    } catch (err: any) {
+      console.log('Avatar upload error:', err);
+      alert('Failed to upload profile picture. Please try again.');
+    } finally {
+      setUpdatingPhoto(false);
+    }
+  };
 
   const menuItems = [
     { title: 'My Goals', desc: 'Daily targets and preferences', icon: '🎯', action: () => {} },
@@ -50,13 +88,26 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         
         {/* Profile Card Info */}
         <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <TouchableOpacity style={styles.editBtn}>
+          <TouchableOpacity style={styles.editBtn} onPress={handlePickAvatar}>
             <Text style={{ fontSize: 16 }}>✏️</Text>
           </TouchableOpacity>
           
-          <View style={[styles.profileAvatar, { backgroundColor: colors.accentGold }]}>
-            <Text style={styles.profileAvatarText}>ॐ</Text>
-          </View>
+          <TouchableOpacity onPress={handlePickAvatar} style={styles.avatarTouchContainer} disabled={updatingPhoto}>
+            {updatingPhoto ? (
+              <View style={[styles.profileAvatar, { backgroundColor: colors.accentGold, justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="small" color="#160826" />
+              </View>
+            ) : avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.profileAvatarImage} />
+            ) : (
+              <View style={[styles.profileAvatar, { backgroundColor: colors.accentGold }]}>
+                <Text style={styles.profileAvatarText}>ॐ</Text>
+              </View>
+            )}
+            <View style={styles.cameraIconContainer}>
+              <Text style={{ fontSize: 10 }}>📷</Text>
+            </View>
+          </TouchableOpacity>
           <Text style={[styles.profileName, { color: colors.textMain }]}>{userName}</Text>
           <Text style={[styles.profileEmail, { color: colors.textSub }]}>{userEmail}</Text>
           <Text style={[styles.profilePhone, { color: colors.textSub }]}>{userPhone || 'No Phone Registered'}</Text>
@@ -224,6 +275,28 @@ const styles = StyleSheet.create({
     color: '#160826',
     fontSize: 32,
     fontWeight: 'bold',
+  },
+  avatarTouchContainer: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  profileAvatarImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#D7A15C',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#160826',
   },
   profileName: {
     fontSize: 18,

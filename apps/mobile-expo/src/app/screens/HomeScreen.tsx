@@ -1,7 +1,59 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import Svg, { Circle, Rect } from 'react-native-svg';
 import { ISadhanaRecord, IAnnouncement, AnnouncementType, PreferredLanguage, AppTab } from '@temple/models';
+
+interface DynamicImageProps {
+  uri: string;
+  style?: any;
+  borderRadius?: number;
+}
+
+export const DynamicImage: React.FC<DynamicImageProps> = ({ uri, style, borderRadius = 0 }) => {
+  const [aspectRatio, setAspectRatio] = React.useState<number | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!uri) return;
+    setLoading(true);
+    Image.getSize(
+      uri,
+      (width, height) => {
+        if (width && height) {
+          setAspectRatio(width / height);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.log('Error getting image size:', error);
+        setLoading(false);
+      }
+    );
+  }, [uri]);
+
+  if (loading) {
+    return (
+      <View style={[style, { height: 160, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)' }]}>
+        <ActivityIndicator size="small" color="#D7A15C" />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri }}
+      style={[
+        style,
+        {
+          width: '100%',
+          aspectRatio: aspectRatio || 16 / 9,
+          borderRadius,
+        },
+      ]}
+      resizeMode="contain"
+    />
+  );
+};
 
 interface HomeScreenProps {
   t: any;
@@ -27,6 +79,7 @@ interface HomeScreenProps {
   nbsJoined: boolean;
   onToggleNbs: (val: boolean) => void;
   lang: PreferredLanguage;
+  avatarUrl?: string;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -53,6 +106,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   nbsJoined = false,
   onToggleNbs = () => {},
   lang = PreferredLanguage.ENGLISH,
+  avatarUrl,
 }) => {
 
   // Date utilities to get local days of the current week (Mon-Sun)
@@ -177,9 +231,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Devotee Greetings Card */}
       <View style={[styles.greetingCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
         <View style={styles.greetingHeader}>
-          <View>
-            <Text style={[styles.greetingText, { color: colors.textSub }]}>{t.greeting}</Text>
-            <Text style={[styles.subGreetingText, { color: colors.textMain }]}>Good Morning, {userName}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Image 
+              source={{ uri: avatarUrl || 'https://images.unsplash.com/photo-1608976478546-24b58e72750e?q=80&w=200&auto=format&fit=crop' }} 
+              style={styles.greetingAvatar} 
+            />
+            <View style={{ marginLeft: 12 }}>
+              <Text style={[styles.greetingText, { color: colors.textSub }]}>{t.greeting}</Text>
+              <Text style={[styles.subGreetingText, { color: colors.textMain }]}>Good Morning, {userName}</Text>
+            </View>
           </View>
           <TouchableOpacity style={[styles.bellIcon, { backgroundColor: colors.divider }]}>
             <Text style={{ fontSize: 18 }}>🔔</Text>
@@ -415,8 +475,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {latestAnnouncement ? (
           <View style={[styles.announcementCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
             {latestAnnouncement.image ? (
-              <Image 
-                source={{ uri: latestAnnouncement.image }} 
+              <DynamicImage 
+                uri={latestAnnouncement.image} 
                 style={styles.announcementImage} 
               />
             ) : null}
@@ -517,6 +577,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginTop: 2,
+  },
+  greetingAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: '#D7A15C',
   },
   bellIcon: {
     width: 38,
@@ -708,7 +775,7 @@ const styles = StyleSheet.create({
   },
   announcementImage: {
     width: '100%',
-    height: 140,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   announcementContent: {
     padding: 16,

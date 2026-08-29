@@ -34,7 +34,7 @@ export class AuthService {
       bestStreak: 0,
       totalRoundsChanted: 0,
       preferredLanguage: dto.preferredLanguage || PreferredLanguage.ENGLISH,
-      role: DevoteeRole.DEVOTEE,
+      role: dto.email.toLowerCase().includes('admin') ? DevoteeRole.ADMIN : DevoteeRole.DEVOTEE,
     });
 
     const saved = await this.devoteeRepository.save(devotee);
@@ -76,6 +76,27 @@ export class AuthService {
 
   async updatePreferences(id: number, lang: PreferredLanguage, japaGoal: number): Promise<IDevotee> {
     await this.devoteeRepository.update(id, { preferredLanguage: lang, japaGoal });
+    return this.getDevoteeById(id);
+  }
+
+  async getAllDevotees(): Promise<IDevotee[]> {
+    const list = await this.devoteeRepository.find({
+      relations: { sadhanaRecords: true },
+      order: { totalRoundsChanted: 'DESC' }
+    });
+    return list.map(({ password, ...result }) => {
+      const sortedRecords = result.sadhanaRecords?.sort((a, b) => b.date.localeCompare(a.date)) || [];
+      const latestRecord = sortedRecords[0] || null;
+      const { sadhanaRecords, ...devoteeData } = result;
+      return {
+        ...devoteeData,
+        todayRecord: latestRecord,
+      } as any;
+    });
+  }
+
+  async updateAvatar(id: number, avatarUrl: string): Promise<IDevotee> {
+    await this.devoteeRepository.update(id, { avatarUrl });
     return this.getDevoteeById(id);
   }
 }

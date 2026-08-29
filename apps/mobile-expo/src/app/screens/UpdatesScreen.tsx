@@ -3,6 +3,58 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIn
 import { IAnnouncement, AnnouncementType } from '@temple/models';
 import { api } from '../utils/api';
 
+interface DynamicImageProps {
+  uri: string;
+  style?: any;
+  borderRadius?: number;
+}
+
+const DynamicImage: React.FC<DynamicImageProps> = ({ uri, style, borderRadius = 0 }) => {
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!uri) return;
+    setLoading(true);
+    Image.getSize(
+      uri,
+      (width, height) => {
+        if (width && height) {
+          setAspectRatio(width / height);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.log('Error getting image size:', error);
+        setLoading(false);
+      }
+    );
+  }, [uri]);
+
+  if (loading) {
+    return (
+      <View style={[style, { height: 160, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)' }]}>
+        <ActivityIndicator size="small" color="#D7A15C" />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri }}
+      style={[
+        style,
+        {
+          width: '100%',
+          aspectRatio: aspectRatio || 16 / 9,
+          borderRadius,
+        },
+      ]}
+      resizeMode="contain"
+    />
+  );
+};
+
 interface UpdatesScreenProps {
   t: any;
   colors: any;
@@ -140,7 +192,7 @@ export const UpdatesScreen: React.FC<UpdatesScreenProps> = ({
               <Text style={[styles.feedDesc, { color: colors.textSub }]}>{item.description}</Text>
               
               {item.image ? (
-                <Image source={{ uri: item.image }} style={styles.feedImage} />
+                <DynamicImage uri={item.image} style={styles.feedImage} borderRadius={12} />
               ) : null}
 
               <TouchableOpacity style={styles.feedAction}>
@@ -218,9 +270,8 @@ const styles = StyleSheet.create({
   },
   feedImage: {
     width: '100%',
-    height: 150,
-    borderRadius: 12,
     marginBottom: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   feedAction: {
     alignSelf: 'flex-start',
