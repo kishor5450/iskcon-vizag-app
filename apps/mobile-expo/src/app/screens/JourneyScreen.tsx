@@ -25,6 +25,7 @@ export const JourneyScreen: React.FC<JourneyScreenProps> = ({
   const [timeframe, setTimeframe] = useState<'week' | 'month' | 'year'>('week');
   const [history, setHistory] = useState<ISadhanaRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
   const fetchHistory = async () => {
     if (!token) return;
@@ -43,13 +44,16 @@ export const JourneyScreen: React.FC<JourneyScreenProps> = ({
     fetchHistory();
   }, [token]);
 
-  // Date utilities to get local days of the current week (Mon-Sun)
-  const getDatesOfCurrentWeek = () => {
-    const current = new Date();
-    const day = current.getDay();
+  useEffect(() => {
+    setCurrentDate(new Date());
+  }, [timeframe]);
+
+  // Date utilities to get local days of the week (Mon-Sun) relative to refDate
+  const getWeekDays = (refDate: Date) => {
+    const day = refDate.getDay();
     // Adjust so week starts on Monday (1) instead of Sunday (0)
-    const diff = current.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(current.setDate(diff));
+    const diff = refDate.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(refDate.getFullYear(), refDate.getMonth(), diff);
     
     const week = [];
     for (let i = 0; i < 7; i++) {
@@ -63,10 +67,173 @@ export const JourneyScreen: React.FC<JourneyScreenProps> = ({
     return week;
   };
 
-  const weekDates = getDatesOfCurrentWeek();
+  const getWeekRangeLabel = (dates: string[]) => {
+    if (dates.length < 7) return '';
+    const start = new Date(dates[0]);
+    const end = new Date(dates[6]);
+    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+    return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
+  };
+
+  const getMonthLabel = (refDate: Date) => {
+    return refDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const getYearLabel = (refDate: Date) => {
+    return refDate.getFullYear().toString();
+  };
+
+  const prevWeek = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() - 7);
+    setCurrentDate(newDate);
+  };
+
+  const nextWeek = () => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(currentDate.getDate() + 7);
+    setCurrentDate(newDate);
+  };
+
+  const prevMonth = () => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(currentDate.getMonth() - 1);
+    setCurrentDate(newDate);
+  };
+
+  const nextMonth = () => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(currentDate.getMonth() + 1);
+    setCurrentDate(newDate);
+  };
+
+  const prevYear = () => {
+    const newDate = new Date(currentDate);
+    newDate.setFullYear(currentDate.getFullYear() - 1);
+    setCurrentDate(newDate);
+  };
+
+  const nextYear = () => {
+    const newDate = new Date(currentDate);
+    newDate.setFullYear(currentDate.getFullYear() + 1);
+    setCurrentDate(newDate);
+  };
+
+  const getMonthlyData = (refDate: Date) => {
+    const year = refDate.getFullYear();
+    const month = refDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const weekLabels = ['W1', 'W2', 'W3', 'W4', 'W5'];
+    const weekRanges = [
+      { start: 1, end: 7 },
+      { start: 8, end: 14 },
+      { start: 15, end: 21 },
+      { start: 22, end: 28 },
+      { start: 29, end: daysInMonth }
+    ];
+    
+    const activeRanges = weekRanges.filter(w => w.start <= daysInMonth);
+    
+    return activeRanges.map((range, index) => {
+      let totalJapa = 0;
+      let totalReading = 0;
+      let totalSadhana = 0;
+      let recordsCount = 0;
+      
+      for (let day = range.start; day <= range.end; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const record = history.find(r => r.date === dateStr);
+        if (record) {
+          totalJapa += record.japaRoundsCount;
+          if (record.readingCompleted) totalReading += 20;
+          
+          const count = [
+            record.japaRoundsCount >= 16,
+            record.readingCompleted,
+            record.mangalaArati,
+            record.morningPrayer,
+            record.spiritualLecture
+          ].filter(Boolean).length;
+          totalSadhana += count;
+          recordsCount++;
+        }
+      }
+      
+      return {
+        day: weekLabels[index],
+        japaValue: recordsCount > 0 ? totalJapa / recordsCount : 0,
+        readingValue: recordsCount > 0 ? totalReading / recordsCount : 0,
+        sadhanaValue: recordsCount > 0 ? totalSadhana / recordsCount : 0,
+        active: recordsCount > 0
+      };
+    });
+  };
+
+  const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const getYearlyData = (refDate: Date) => {
+    const year = refDate.getFullYear();
+    
+    return monthLabels.map((label, monthIndex) => {
+      let totalJapa = 0;
+      let totalReading = 0;
+      let totalSadhana = 0;
+      let recordsCount = 0;
+      
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const record = history.find(r => r.date === dateStr);
+        if (record) {
+          totalJapa += record.japaRoundsCount;
+          if (record.readingCompleted) totalReading += 20;
+          
+          const count = [
+            record.japaRoundsCount >= 16,
+            record.readingCompleted,
+            record.mangalaArati,
+            record.morningPrayer,
+            record.spiritualLecture
+          ].filter(Boolean).length;
+          totalSadhana += count;
+          recordsCount++;
+        }
+      }
+      
+      return {
+        day: label,
+        japaValue: recordsCount > 0 ? totalJapa / recordsCount : 0,
+        readingValue: recordsCount > 0 ? totalReading / recordsCount : 0,
+        sadhanaValue: recordsCount > 0 ? totalSadhana / recordsCount : 0,
+        active: recordsCount > 0
+      };
+    });
+  };
+
+  const handlePrev = () => {
+    if (timeframe === 'week') {
+      prevWeek();
+    } else if (timeframe === 'month') {
+      prevMonth();
+    } else {
+      prevYear();
+    }
+  };
+
+  const handleNext = () => {
+    if (timeframe === 'week') {
+      nextWeek();
+    } else if (timeframe === 'month') {
+      nextMonth();
+    } else {
+      nextYear();
+    }
+  };
+
+  const weekDates = getWeekDays(currentDate);
   const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-  // Parse Japa Chart Data
+  // Parse Japa Chart Data (weekly)
   const japaWeeklyData = dayLabels.map((label, index) => {
     const dateStr = weekDates[index];
     const record = history.find((r) => r.date === dateStr);
@@ -77,7 +244,7 @@ export const JourneyScreen: React.FC<JourneyScreenProps> = ({
     };
   });
 
-  // Parse Reading Chart Data
+  // Parse Reading Chart Data (weekly)
   const readingWeeklyData = dayLabels.map((label, index) => {
     const dateStr = weekDates[index];
     const record = history.find((r) => r.date === dateStr);
@@ -88,7 +255,7 @@ export const JourneyScreen: React.FC<JourneyScreenProps> = ({
     };
   });
 
-  // Parse Sadhana Checklist Chart Data
+  // Parse Sadhana Checklist Chart Data (weekly)
   const sadhanaWeeklyData = dayLabels.map((label, index) => {
     const dateStr = weekDates[index];
     const record = history.find((r) => r.date === dateStr);
@@ -108,21 +275,115 @@ export const JourneyScreen: React.FC<JourneyScreenProps> = ({
     };
   });
 
-  // Count active days in the current week
-  const japaDaysCount = japaWeeklyData.filter((d) => d.active && d.value > 0).length;
-  const readingDaysCount = readingWeeklyData.filter((d) => d.active && d.value > 0).length;
-  const sadhanaDaysCount = sadhanaWeeklyData.filter((d) => d.active && d.value > 0).length;
+  // Monthly Chart Data mapping
+  const monthlyGroupedData = getMonthlyData(currentDate);
+  const japaMonthlyData = monthlyGroupedData.map(d => ({ day: d.day, value: d.japaValue, active: d.active }));
+  const readingMonthlyData = monthlyGroupedData.map(d => ({ day: d.day, value: d.readingValue, active: d.active }));
+  const sadhanaMonthlyData = monthlyGroupedData.map(d => ({ day: d.day, value: d.sadhanaValue, active: d.active }));
 
-  const renderChart = (title: string, summaryText: string, data: any[], barColor: string) => {
+  // Yearly Chart Data mapping
+  const yearlyGroupedData = getYearlyData(currentDate);
+  const japaYearlyData = yearlyGroupedData.map(d => ({ day: d.day, value: d.japaValue, active: d.active }));
+  const readingYearlyData = yearlyGroupedData.map(d => ({ day: d.day, value: d.readingValue, active: d.active }));
+  const sadhanaYearlyData = yearlyGroupedData.map(d => ({ day: d.day, value: d.sadhanaValue, active: d.active }));
+
+  let activeJapaData = japaWeeklyData;
+  let activeReadingData = readingWeeklyData;
+  let activeSadhanaData = sadhanaWeeklyData;
+  
+  let japaSummary = '';
+  let readingSummary = '';
+  let sadhanaSummary = '';
+
+  if (timeframe === 'week') {
+    const japaDaysCount = japaWeeklyData.filter((d) => d.active && d.value > 0).length;
+    const readingDaysCount = readingWeeklyData.filter((d) => d.active && d.value > 0).length;
+    const sadhanaDaysCount = sadhanaWeeklyData.filter((d) => d.active && d.value > 0).length;
+
+    activeJapaData = japaWeeklyData;
+    activeReadingData = readingWeeklyData;
+    activeSadhanaData = sadhanaWeeklyData;
+
+    japaSummary = `${japaDaysCount} / 7 Days Chanted`;
+    readingSummary = `${readingDaysCount} / 7 Days Read`;
+    sadhanaSummary = `${sadhanaDaysCount} / 7 Days Completed`;
+  } else if (timeframe === 'month') {
+    const monthRecords = history.filter(r => {
+      const d = new Date(r.date);
+      return d.getFullYear() === currentDate.getFullYear() && d.getMonth() === currentDate.getMonth();
+    });
+    const avgJapa = monthRecords.length > 0 ? (monthRecords.reduce((sum, r) => sum + r.japaRoundsCount, 0) / monthRecords.length).toFixed(1) : '0';
+    const avgReading = monthRecords.length > 0 ? (monthRecords.reduce((sum, r) => sum + (r.readingCompleted ? 20 : 0), 0) / monthRecords.length).toFixed(1) : '0';
+    const avgSadhana = monthRecords.length > 0 ? (monthRecords.reduce((sum, r) => {
+      const count = [
+        r.japaRoundsCount >= 16,
+        r.readingCompleted,
+        r.mangalaArati,
+        r.morningPrayer,
+        r.spiritualLecture
+      ].filter(Boolean).length;
+      return sum + count;
+    }, 0) / monthRecords.length).toFixed(1) : '0';
+
+    activeJapaData = japaMonthlyData;
+    activeReadingData = readingMonthlyData;
+    activeSadhanaData = sadhanaMonthlyData;
+
+    japaSummary = `Avg: ${avgJapa} Rounds`;
+    readingSummary = `Avg: ${avgReading} min`;
+    sadhanaSummary = `Avg: ${avgSadhana} / 5 Items`;
+  } else {
+    const yearRecords = history.filter(r => {
+      const d = new Date(r.date);
+      return d.getFullYear() === currentDate.getFullYear();
+    });
+    const avgJapa = yearRecords.length > 0 ? (yearRecords.reduce((sum, r) => sum + r.japaRoundsCount, 0) / yearRecords.length).toFixed(1) : '0';
+    const avgReading = yearRecords.length > 0 ? (yearRecords.reduce((sum, r) => sum + (r.readingCompleted ? 20 : 0), 0) / yearRecords.length).toFixed(1) : '0';
+    const avgSadhana = yearRecords.length > 0 ? (yearRecords.reduce((sum, r) => {
+      const count = [
+        r.japaRoundsCount >= 16,
+        r.readingCompleted,
+        r.mangalaArati,
+        r.morningPrayer,
+        r.spiritualLecture
+      ].filter(Boolean).length;
+      return sum + count;
+    }, 0) / yearRecords.length).toFixed(1) : '0';
+
+    activeJapaData = japaYearlyData;
+    activeReadingData = readingYearlyData;
+    activeSadhanaData = sadhanaYearlyData;
+
+    japaSummary = `Avg: ${avgJapa} Rounds`;
+    readingSummary = `Avg: ${avgReading} min`;
+    sadhanaSummary = `Avg: ${avgSadhana} / 5 Items`;
+  }
+
+  const getDateLabel = () => {
+    if (timeframe === 'week') {
+      return getWeekRangeLabel(weekDates);
+    } else if (timeframe === 'month') {
+      return getMonthLabel(currentDate);
+    } else {
+      return getYearLabel(currentDate);
+    }
+  };
+
+  const renderChart = (
+    title: string,
+    summary: string,
+    data: { day: string; value: number; active: boolean }[],
+    barColor: string
+  ) => {
     return (
       <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
         <View style={styles.chartHeader}>
           <Text style={[styles.chartTitle, { color: colors.textMain }]}>{title}</Text>
-          <Text style={[styles.chartSummary, { color: colors.textSub }]}>{summaryText}</Text>
+          <Text style={[styles.chartSummary, { color: colors.accentGold }]}>{summary}</Text>
         </View>
+
         <View style={styles.chartBarsArea}>
           {data.map((item, idx) => {
-            // Normalize heights: max Japa = 16, max Reading = 20, max Sadhana = 5
             let height = 0;
             if (title.includes('Japa')) {
               height = (item.value / 16) * 75;
@@ -193,18 +454,18 @@ export const JourneyScreen: React.FC<JourneyScreenProps> = ({
 
       {/* Date Range Selector */}
       <View style={styles.dateSelector}>
-        <TouchableOpacity><Text style={[styles.dateArrow, { color: colors.textSub }]}>‹</Text></TouchableOpacity>
-        <Text style={[styles.dateText, { color: colors.textMain }]}>15 May - 21 May</Text>
-        <TouchableOpacity><Text style={[styles.dateArrow, { color: colors.textSub }]}>›</Text></TouchableOpacity>
+        <TouchableOpacity onPress={handlePrev}><Text style={[styles.dateArrow, { color: colors.textSub }]}>‹</Text></TouchableOpacity>
+        <Text style={[styles.dateText, { color: colors.textMain }]}>{getDateLabel()}</Text>
+        <TouchableOpacity onPress={handleNext}><Text style={[styles.dateArrow, { color: colors.textSub }]}>›</Text></TouchableOpacity>
       </View>
 
       {loading ? (
         <ActivityIndicator size="large" color={colors.accentGold} style={{ marginTop: 24 }} />
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {renderChart('Japa', `${japaDaysCount} / 7 Days Chanted`, japaWeeklyData, '#27AE60')}
-          {renderChart('Reading', `${readingDaysCount} / 7 Days Read`, readingWeeklyData, '#F2994A')}
-          {renderChart('Sadhana', `${sadhanaDaysCount} / 7 Days Completed`, sadhanaWeeklyData, '#2D9CDB')}
+          {renderChart('Japa', japaSummary, activeJapaData, '#27AE60')}
+          {renderChart('Reading', readingSummary, activeReadingData, '#F2994A')}
+          {renderChart('Sadhana', sadhanaSummary, activeSadhanaData, '#2D9CDB')}
 
           {/* Bottom Lotus Quote Card */}
           <View style={[styles.quoteCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
