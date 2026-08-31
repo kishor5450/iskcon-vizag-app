@@ -23,6 +23,9 @@ interface SadhanaScreenProps {
   setSadhanaLecture: (val: boolean) => void;
   radius: number;
   readingProgress: string;
+  thisWeekRounds: number;
+  thisMonthRounds: number;
+  handleJapaRoundChange: (amount: number) => void;
 }
 
 export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
@@ -46,6 +49,9 @@ export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
   setSadhanaLecture,
   radius,
   readingProgress,
+  thisWeekRounds,
+  thisMonthRounds,
+  handleJapaRoundChange,
 }) => {
   const [subTab, setSubTab] = useState<'japa' | 'sadhana'>('japa');
 
@@ -59,10 +65,7 @@ export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
   ].filter(Boolean).length;
   const sadhanaTotalCount = 5;
 
-  // Streak details placeholder (matches Phone 2)
-  const currentStreak = 12;
-  const bestStreak = 27;
-  const thisMonthRounds = 192;
+  // Streak details loaded dynamically from backend
 
   // Calculate circular progress path details
   const progressRatio = sadhanaCompletedCount / sadhanaTotalCount;
@@ -140,27 +143,36 @@ export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
 
           {/* Completing Action buttons */}
           <View style={styles.actionButtonRow}>
-            <TouchableOpacity style={[styles.controlBtn, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-              <Text style={[styles.controlBtnText, { color: colors.textMain }]}>Pause</Text>
+            <TouchableOpacity 
+              onPress={() => handleJapaRoundChange(-1)} 
+              style={[styles.controlBtn, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+            >
+              <Text style={[styles.controlBtnText, { color: colors.textMain }]}>➖ -1 Round</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => handleJapaRoundChange(1)} 
+              style={[styles.controlBtn, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+            >
+              <Text style={[styles.controlBtnText, { color: colors.textMain }]}>➕ +1 Round</Text>
             </TouchableOpacity>
           </View>
 
           <Text style={[styles.beadTip, { color: colors.textSub }]}>
-            8 Rounds Completed
+            {japaRounds} Rounds Completed
           </Text>
 
           {/* Streaks Card */}
           <View style={[styles.streakStatsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
             <View style={styles.streakCol}>
-              <Text style={[styles.streakVal, { color: colors.textMain }]}>{currentStreak}</Text>
-              <Text style={[styles.streakLbl, { color: colors.textSub }]}>Current Streak</Text>
-              <Text style={[styles.streakSubLbl, { color: colors.textSub }]}>Days</Text>
+              <Text style={[styles.streakVal, { color: colors.textMain }]}>{japaRounds}</Text>
+              <Text style={[styles.streakLbl, { color: colors.textSub }]}>Today</Text>
+              <Text style={[styles.streakSubLbl, { color: colors.textSub }]}>Rounds</Text>
             </View>
             <View style={styles.streakDivider} />
             <View style={styles.streakCol}>
-              <Text style={[styles.streakVal, { color: colors.textMain }]}>{bestStreak}</Text>
-              <Text style={[styles.streakLbl, { color: colors.textSub }]}>Best Streak</Text>
-              <Text style={[styles.streakSubLbl, { color: colors.textSub }]}>Days</Text>
+              <Text style={[styles.streakVal, { color: colors.textMain }]}>{thisWeekRounds}</Text>
+              <Text style={[styles.streakLbl, { color: colors.textSub }]}>This Week</Text>
+              <Text style={[styles.streakSubLbl, { color: colors.textSub }]}>Rounds</Text>
             </View>
             <View style={styles.streakDivider} />
             <View style={styles.streakCol}>

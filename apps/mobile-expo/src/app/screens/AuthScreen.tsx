@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { IDevotee, RegisterRequestDto, PreferredLanguage } from '@temple/models';
 import { api } from '../utils/api';
@@ -125,10 +126,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         
         <SafeAreaView style={styles.welcomeContainer}>
           <View style={styles.welcomeHeader}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoIcon}>🪷</Text>
-            </View>
-            <Text style={styles.welcomeBrand}>ISKCON VIZAG</Text>
+            <Image 
+              source={require('../../../assets/images/iskcon_vizag_logo.jpg')} 
+              style={styles.welcomeLogo}
+              resizeMode="contain"
+            />
+            <Text style={[styles.welcomeBrand, { color: colors.accentGold }]}>ISKCON VIZAG</Text>
             <Text style={styles.welcomeSlogan}>My Bhakti. My Temple. My Family.</Text>
           </View>
 
@@ -191,7 +194,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           </TouchableOpacity>
 
           <View style={styles.formHeader}>
-            <Text style={[styles.logoIconLarge, { color: colors.accentGold }]}>🪷</Text>
+            <Image 
+              source={require('../../../assets/images/iskcon_vizag_logo.jpg')} 
+              style={styles.formLogo}
+              resizeMode="contain"
+            />
             <Text style={[styles.formTitle, { color: colors.textMain }]}>
               {authState === 'login' ? 'Welcome Back' : 'Create Devotee Account'}
             </Text>
@@ -329,7 +336,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(22, 8, 38, 0.72)',
+    backgroundColor: 'rgba(16, 5, 28, 0.85)',
   },
   welcomeContainer: {
     flex: 1,
@@ -341,19 +348,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 30,
   },
-  logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(241, 189, 60, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: '#F1BD3C',
+  welcomeLogo: {
+    width: 180,
+    height: 180,
+    borderRadius: 24,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#D7A15C',
   },
-  logoIcon: {
-    fontSize: 32,
+  formLogo: {
+    width: 90,
+    height: 90,
+    borderRadius: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#D7A15C',
   },
   welcomeBrand: {
     fontSize: 24,

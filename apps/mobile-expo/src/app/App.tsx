@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TRANSLATIONS, IDevotee, SadhanaLogRequestDto, ISadhanaRecord, IAnnouncement, PreferredLanguage, AppTab, DevoteeRole } from '@temple/models';
 import { HomeScreen } from './screens/HomeScreen';
 import { SadhanaScreen } from './screens/SadhanaScreen';
@@ -51,8 +52,9 @@ export const App = () => {
   const [sadhanaLecture, setSadhanaLecture] = useState<boolean>(false);
   const [nbsJoined, setNbsJoined] = useState<boolean>(false);
 
-  // Month Statistics & Updates Category Filter
+  // Month/Week Statistics & Updates Category Filter
   const [thisMonthRounds, setThisMonthRounds] = useState<number>(0);
+  const [thisWeekRounds, setThisWeekRounds] = useState<number>(0);
   const [activeUpdateFilter, setActiveUpdateFilter] = useState<'all' | 'festival' | 'temple' | 'classes' | 'seva'>('all');
   const [history, setHistory] = useState<ISadhanaRecord[]>([]);
   const [announcements, setAnnouncements] = useState<IAnnouncement[]>([]);
@@ -119,6 +121,21 @@ export const App = () => {
         .filter(r => r.date.startsWith(currentYearMonth))
         .reduce((sum, r) => sum + r.japaRoundsCount, 0);
       setThisMonthRounds(monthlyRounds);
+
+      // Calculate this week's total rounds (starting from Sunday of current week)
+      const today = new Date(dateStr);
+      const day = today.getDay();
+      const diff = today.getDate() - day;
+      const startOfWeek = new Date(today.setDate(diff));
+      startOfWeek.setHours(0, 0, 0, 0);
+      const wYear = startOfWeek.getFullYear();
+      const wMonth = String(startOfWeek.getMonth() + 1).padStart(2, '0');
+      const wDay = String(startOfWeek.getDate()).padStart(2, '0');
+      const startOfWeekStr = `${wYear}-${wMonth}-${wDay}`;
+      const weeklyRounds = historyData
+        .filter(r => r.date >= startOfWeekStr)
+        .reduce((sum, r) => sum + r.japaRoundsCount, 0);
+      setThisWeekRounds(weeklyRounds);
     } catch (err) {
       console.log('Error syncing logs: ', err);
     } finally {
@@ -164,6 +181,32 @@ export const App = () => {
     }
   };
 
+  // Direct increment/decrement rounds for Japa Mala updates
+  const handleJapaRoundChange = async (amount: number) => {
+    const nextRounds = Math.max(0, japaRounds + amount);
+    setJapaRounds(nextRounds);
+    setSadhanaJapa(nextRounds >= japaGoal);
+
+    if (jwtToken) {
+      try {
+        const logData = new SadhanaLogRequestDto(
+          todayStr,
+          nextRounds,
+          sadhanaReading,
+          readingProgress,
+          sadhanaArati,
+          sadhanaPrayer,
+          sadhanaLecture,
+          nbsJoined
+        );
+        await api.submitSadhanaLog(jwtToken, logData);
+        await syncSadhanaLogs(jwtToken, todayStr);
+      } catch (err) {
+        console.log('Failed updating japa rounds directly: ', err);
+      }
+    }
+  };
+
   // Japa Bead Counter logic connected to backend
   const handleBeadPress = async () => {
     if (japaCount >= 107) {
@@ -198,21 +241,21 @@ export const App = () => {
     }
   };
 
-  // Color Tokens based on Light/Dark Mode
+  // Color Tokens based on Light/Dark Mode (Rich Purple and Gold Theme)
   const colors = {
-    bg: isDarkMode ? '#160826' : '#FAF6EE',
-    card: isDarkMode ? '#25143E' : '#FFFDFC',
-    cardBorder: isDarkMode ? '#3A245E' : '#EADFC9',
+    bg: isDarkMode ? '#10051C' : '#FAF6EE',
+    card: isDarkMode ? '#1B0C30' : '#FFFDFC',
+    cardBorder: isDarkMode ? '#2A1647' : '#EADFC9',
     textMain: isDarkMode ? '#FFFFFF' : '#8C1A1A',
     textSub: isDarkMode ? '#D4C9E8' : '#6B5E4F',
-    accentGold: '#F1BD3C',
+    accentGold: '#D7A15C', // Premium metallic gold
     accentGreen: '#27AE60',
-    navBg: isDarkMode ? '#10051C' : '#FFFFFF',
-    navActive: '#F1BD3C',
-    navInactive: isDarkMode ? '#796796' : '#B0A38F',
-    divider: isDarkMode ? '#271844' : '#EBE5D8',
+    navBg: isDarkMode ? '#0B0314' : '#FFFFFF',
+    navActive: '#D7A15C',
+    navInactive: isDarkMode ? '#8F7BAA' : '#B0A38F',
+    divider: isDarkMode ? '#1E0F34' : '#EBE5D8',
     pureWhite: '#FFFFFF',
-    darkPurple: '#1F1545',
+    darkPurple: '#150A24',
     creamAccent: '#FFFDF9',
   };
 
@@ -260,8 +303,9 @@ export const App = () => {
         <View style={[styles.headerBar, { borderBottomColor: colors.divider, backgroundColor: colors.bg }]}>
           <View style={styles.headerLogoContainer}>
             <Image
-              source={{ uri: 'https://img.icons8.com/ios-filled/100/d7a15c/lotus.png' }}
+              source={require('../../assets/images/iskcon_vizag_header_logo.png')}
               style={styles.logoImage}
+              resizeMode="contain"
             />
             <View>
               <Text style={[styles.headerTitle, { color: colors.textMain }]}>ISKCON VIZAG</Text>
@@ -339,6 +383,9 @@ export const App = () => {
               setSadhanaLecture={(val) => handleSadhanaToggle('lecture', val)}
               radius={radius}
               readingProgress={readingProgress}
+              thisWeekRounds={thisWeekRounds}
+              thisMonthRounds={thisMonthRounds}
+              handleJapaRoundChange={handleJapaRoundChange}
             />
           )}
 
@@ -411,28 +458,28 @@ export const App = () => {
         <View style={[styles.navTabBar, { backgroundColor: colors.navBg, borderTopColor: colors.divider }]}>
           <TouchableOpacity onPress={() => setActiveTab(AppTab.HOME)} style={styles.navTabItem}>
             <View style={styles.tabIconWrapper}>
-              <Text style={[styles.navTabIcon, { color: activeTab === AppTab.HOME ? colors.navActive : colors.navInactive }]}>🏠</Text>
+              <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.HOME ? 1 : 0.6 }]}>🛕</Text>
             </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.HOME ? colors.navActive : colors.navInactive }]}>{t.home}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab(AppTab.SADHANA)} style={styles.navTabItem}>
             <View style={styles.tabIconWrapper}>
-              <Text style={[styles.navTabIcon, { color: activeTab === AppTab.SADHANA ? colors.navActive : colors.navInactive }]}>📿</Text>
+              <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.SADHANA ? 1 : 0.6 }]}>📿</Text>
             </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.SADHANA ? colors.navActive : colors.navInactive }]}>{t.sadhanaTab}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab(AppTab.UPDATES)} style={styles.navTabItem}>
             <View style={styles.tabIconWrapper}>
-              <Text style={[styles.navTabIcon, { color: activeTab === AppTab.UPDATES ? colors.navActive : colors.navInactive }]}>📢</Text>
+              <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.UPDATES ? 1 : 0.6 }]}>🔔</Text>
             </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.UPDATES ? colors.navActive : colors.navInactive }]}>{t.updatesTab}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setActiveTab(AppTab.COMMUNITY)} style={styles.navTabItem}>
             <View style={styles.tabIconWrapper}>
-              <Text style={[styles.navTabIcon, { color: activeTab === AppTab.COMMUNITY ? colors.navActive : colors.navInactive }]}>👥</Text>
+              <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.COMMUNITY ? 1 : 0.6 }]}>🪷</Text>
             </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.COMMUNITY ? colors.navActive : colors.navInactive }]}>Community</Text>
           </TouchableOpacity>
@@ -448,7 +495,7 @@ export const App = () => {
                   ]} 
                 />
               ) : (
-                <Text style={[styles.navTabIcon, { color: activeTab === AppTab.PROFILE ? colors.navActive : colors.navInactive }]}>👤</Text>
+                <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.PROFILE ? 1 : 0.6 }]}>🧘</Text>
               )}
             </View>
             <Text style={[styles.navTabText, { color: activeTab === AppTab.PROFILE ? colors.navActive : colors.navInactive }]}>{t.profileTab}</Text>
@@ -457,7 +504,7 @@ export const App = () => {
           {devotee?.role === DevoteeRole.ADMIN && (
             <TouchableOpacity onPress={() => setActiveTab(AppTab.ADMIN)} style={styles.navTabItem}>
               <View style={styles.tabIconWrapper}>
-                <Text style={[styles.navTabIcon, { color: activeTab === AppTab.ADMIN ? colors.navActive : colors.navInactive }]}>🛠️</Text>
+                <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.ADMIN ? 1 : 0.6 }]}>⚙️</Text>
               </View>
               <Text style={[styles.navTabText, { color: activeTab === AppTab.ADMIN ? colors.navActive : colors.navInactive }]}>Admin</Text>
             </TouchableOpacity>
@@ -477,7 +524,7 @@ const styles = StyleSheet.create({
     paddingBottom: 90,
   },
   headerBar: {
-    height: 70,
+    height: 88,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -489,9 +536,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoImage: {
-    width: 38,
-    height: 38,
-    marginRight: 10,
+    width: 70,
+    height: 70,
+    marginRight: 12,
     resizeMode: 'contain',
   },
   avatarText: {
@@ -500,12 +547,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
   headerSubtitle: {
-    fontSize: 10,
+    fontSize: 11,
   },
   headerControls: {
     flexDirection: 'row',

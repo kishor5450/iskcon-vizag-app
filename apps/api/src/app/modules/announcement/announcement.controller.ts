@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Query, Param, UseGuards, Request, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query, Param, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { AnnouncementService } from './announcement.service';
 import { IAnnouncement, CreateAnnouncementRequestDto } from '@temple/models';
 import { AuthGuard } from '../auth/auth.guard';
@@ -42,9 +42,13 @@ export class AnnouncementController {
     }),
   )
   uploadFile(@UploadedFile() file: any, @Request() req: any) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded or invalid file field name. The file must be sent in the "file" field.');
+    }
     const host = req.get('host');
     const protocol = req.protocol || 'http';
     const fileUrl = `${protocol}://${host}/uploads/${file.filename}`;
     return { url: fileUrl };
   }
 }
+

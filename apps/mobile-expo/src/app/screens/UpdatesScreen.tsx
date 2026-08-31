@@ -96,7 +96,7 @@ export const UpdatesScreen: React.FC<UpdatesScreenProps> = ({
       id: 1,
       title: 'Janmashtami Celebrations',
       description: 'Join Sri Krishna Janmashtami abhishek, kirtan and special mahaprasadam feast. Seva options available.',
-      image: 'https://images.unsplash.com/photo-1590050752117-238cb061295a?q=80&w=600&auto=format&fit=crop',
+      image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=600&auto=format&fit=crop',
       type: AnnouncementType.FESTIVAL,
       date: '25 Aug - 27 Aug',
       official: true,

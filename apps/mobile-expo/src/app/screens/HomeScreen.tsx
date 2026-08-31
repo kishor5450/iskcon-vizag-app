@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import Svg, { Circle, Rect } from 'react-native-svg';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ISadhanaRecord, IAnnouncement, AnnouncementType, PreferredLanguage, AppTab } from '@temple/models';
 
 interface DynamicImageProps {
@@ -233,7 +234,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <View style={styles.greetingHeader}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Image 
-              source={{ uri: avatarUrl || 'https://images.unsplash.com/photo-1608976478546-24b58e72750e?q=80&w=200&auto=format&fit=crop' }} 
+              source={{ uri: avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop' }} 
               style={styles.greetingAvatar} 
             />
             <View style={{ marginLeft: 12 }}>

@@ -40,7 +40,7 @@ export class AnnouncementService implements OnModuleInit {
       {
         title: 'Janmashtami Celebrations',
         description: 'Special program, abhishek, and kirtan for Krishna Janmashtami from 25 Aug - 27 Aug.',
-        image: 'https://images.unsplash.com/photo-1590050752117-238cb061295a',
+        image: 'https://images.unsplash.com/photo-1544816155-12df9643f363',
         type: AnnouncementType.FESTIVAL,
         date: '25 Aug - 27 Aug',
         time: '4:30 AM onwards',

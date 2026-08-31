@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Image, Act
 import { PreferredLanguage, AppTab } from '@temple/models';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../utils/api';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface ProfileScreenProps {
   t: any;
@@ -43,6 +44,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onUpdateAvatar = () => {},
   token,
 }) => {
+  console.log('[ProfileScreen] avatarUrl is:', avatarUrl);
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [updatingPhoto, setUpdatingPhoto] = useState(false);
 
@@ -97,12 +99,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <View style={[styles.profileAvatar, { backgroundColor: colors.accentGold, justifyContent: 'center', alignItems: 'center' }]}>
                 <ActivityIndicator size="small" color="#160826" />
               </View>
-            ) : avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.profileAvatarImage} />
             ) : (
-              <View style={[styles.profileAvatar, { backgroundColor: colors.accentGold }]}>
-                <Text style={styles.profileAvatarText}>ॐ</Text>
-              </View>
+              <Image 
+                source={{ uri: avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop' }} 
+                style={styles.profileAvatarImage} 
+              />
             )}
             <View style={styles.cameraIconContainer}>
               <Text style={{ fontSize: 10 }}>📷</Text>
