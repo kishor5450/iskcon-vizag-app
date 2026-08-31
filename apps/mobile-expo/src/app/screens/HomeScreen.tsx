@@ -35,7 +35,7 @@ export const DynamicImage: React.FC<DynamicImageProps> = ({ uri, style, borderRa
   if (loading) {
     return (
       <View style={[style, { height: 160, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)' }]}>
-        <ActivityIndicator size="small" color="#D7A15C" />
+        <ActivityIndicator size="small" color="#ffd700" />
       </View>
     );
   }
@@ -131,6 +131,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const weekDates = getDatesOfCurrentWeek();
+
+  // Calculate Nityam Bhagavata Sevaya monthly attendance
+  const currentYearMonth = new Date().toISOString().substring(0, 7); // "YYYY-MM"
+  const nbsDaysThisMonth = history.filter(r => r.nbsJoined && r.date.startsWith(currentYearMonth)).length;
+
+  // Check if current time is within NBS attendance check-in window (6:30 AM - 7:30 AM)
+  const isNbsCheckInWindow = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTimeInMinutes = hours * 60 + minutes;
+    const startInMinutes = 6 * 60 + 30; // 6:30 AM
+    const endInMinutes = 7 * 60 + 30;   // 7:30 AM
+    return currentTimeInMinutes >= startInMinutes && currentTimeInMinutes <= endInMinutes;
+  };
 
   // 1. Japa progress (Chanted at least 1 round on how many days this week)
   const japaActiveDays = weekDates.filter(dateStr => {
@@ -332,14 +347,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </View>
 
           {/* NBS Live Session Tracker Card */}
-          <View style={[styles.nbsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <View style={[styles.nbsCard, { backgroundColor: colors.card, borderColor: nbsJoined ? '#5CB85C' : colors.cardBorder, borderWidth: nbsJoined ? 1.5 : 1 }]}>
             <View style={styles.nbsCardHeader}>
               <View>
                 <Text style={[styles.nbsTitle, { color: colors.textMain }]}>{t.nbsTitle}</Text>
                 <Text style={[styles.nbsSubtitle, { color: colors.textSub }]}>{t.nbsSubtitle}</Text>
               </View>
-              <View style={[styles.liveIndicator, { backgroundColor: '#2196F3' }]}>
-                <Text style={styles.liveIndicatorText}>LIVE TRACKING</Text>
+              <View style={[styles.liveIndicator, { backgroundColor: nbsJoined ? '#5CB85C' : '#2196F3' }]}>
+                <Text style={styles.liveIndicatorText}>{nbsJoined ? 'ATTENDED' : 'LIVE TRACKING'}</Text>
               </View>
             </View>
 
@@ -365,17 +380,50 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </View>
             </View>
 
-            <TouchableOpacity 
-              onPress={() => onToggleNbs(!nbsJoined)}
-              style={[
-                styles.nbsJoinBtn, 
-                { backgroundColor: nbsJoined ? '#2196F3' : colors.accentGold }
-              ]}
-            >
-              <Text style={[styles.nbsJoinBtnText, { color: nbsJoined ? '#FFFFFF' : '#160826' }]}>
-                {nbsJoined ? t.joinedNbs : t.joinNbs}
+            {/* Attendance statistics and feedback */}
+            <View style={{ marginVertical: 12, paddingHorizontal: 4 }}>
+              {nbsJoined ? (
+                <Text style={{ color: colors.accentGold, fontSize: 13, fontWeight: '600', fontStyle: 'italic', marginBottom: 4 }}>
+                  ✨ You attended today's morning program! Keep up the devotion! 🙏
+                </Text>
+              ) : null}
+              <Text style={{ color: colors.textSub, fontSize: 12, fontWeight: '500' }}>
+                📅 Monthly Attendance: <Text style={{ color: colors.textMain, fontWeight: 'bold' }}>{nbsDaysThisMonth} days</Text> logged
               </Text>
-            </TouchableOpacity>
+            </View>
+
+            {/* Check-in visibility condition */}
+            {isNbsCheckInWindow() || nbsJoined ? (
+              <TouchableOpacity 
+                onPress={() => onToggleNbs(!nbsJoined)}
+                style={[
+                  styles.nbsJoinBtn, 
+                  { 
+                    backgroundColor: nbsJoined ? 'rgba(92, 184, 92, 0.15)' : colors.accentGold,
+                    borderWidth: nbsJoined ? 1.5 : 0,
+                    borderColor: '#5CB85C'
+                  }
+                ]}
+                disabled={!isNbsCheckInWindow() && nbsJoined}
+              >
+                <Text style={[styles.nbsJoinBtnText, { color: nbsJoined ? '#5CB85C' : '#160826', fontWeight: 'bold' }]}>
+                  {nbsJoined ? t.joinedNbs : t.joinNbs}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ 
+                padding: 12, 
+                borderRadius: 8, 
+                backgroundColor: colors.bg, 
+                borderWidth: 1, 
+                borderColor: colors.cardBorder, 
+                alignItems: 'center' 
+              }}>
+                <Text style={{ color: colors.textSub, fontSize: 12, fontWeight: '500', textAlign: 'center', lineHeight: 18 }}>
+                  🪷 Dear Devotees, check-in for Nityam Bhāgavata Sevayā is open daily from 6:30 AM to 7:30 AM. Let us serve together! 🙏
+                </Text>
+              </View>
+            )}
           </View>
 
         </View>
@@ -584,7 +632,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     borderWidth: 1.5,
-    borderColor: '#D7A15C',
+    borderColor: '#ffd700',
   },
   bellIcon: {
     width: 38,

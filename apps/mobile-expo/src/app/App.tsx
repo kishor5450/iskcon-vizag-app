@@ -248,10 +248,10 @@ export const App = () => {
     cardBorder: isDarkMode ? '#2A1647' : '#EADFC9',
     textMain: isDarkMode ? '#FFFFFF' : '#8C1A1A',
     textSub: isDarkMode ? '#D4C9E8' : '#6B5E4F',
-    accentGold: '#D7A15C', // Premium metallic gold
+    accentGold: '#ffd700', // Premium metallic gold
     accentGreen: '#27AE60',
     navBg: isDarkMode ? '#0B0314' : '#FFFFFF',
-    navActive: '#D7A15C',
+    navActive: '#ffd700',
     navInactive: isDarkMode ? '#8F7BAA' : '#B0A38F',
     divider: isDarkMode ? '#1E0F34' : '#EBE5D8',
     pureWhite: '#FFFFFF',
@@ -291,8 +291,8 @@ export const App = () => {
     );
   }
 
-  const sadhanaCompletedCount = [sadhanaJapa, sadhanaReading, sadhanaArati, sadhanaPrayer, sadhanaLecture].filter(Boolean).length;
-  const sadhanaTotalCount = 5;
+  const sadhanaCompletedCount = [sadhanaJapa, sadhanaReading, sadhanaArati, sadhanaPrayer, sadhanaLecture, nbsJoined].filter(Boolean).length;
+  const sadhanaTotalCount = 6;
 
   return (
     <>
@@ -386,6 +386,8 @@ export const App = () => {
               thisWeekRounds={thisWeekRounds}
               thisMonthRounds={thisMonthRounds}
               handleJapaRoundChange={handleJapaRoundChange}
+              nbsJoined={nbsJoined}
+              onToggleNbs={(val) => handleSadhanaToggle('nbs', val)}
             />
           )}
 

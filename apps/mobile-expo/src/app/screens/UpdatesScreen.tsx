@@ -34,7 +34,7 @@ const DynamicImage: React.FC<DynamicImageProps> = ({ uri, style, borderRadius = 
   if (loading) {
     return (
       <View style={[style, { height: 160, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)' }]}>
-        <ActivityIndicator size="small" color="#D7A15C" />
+        <ActivityIndicator size="small" color="#ffd700" />
       </View>
     );
   }

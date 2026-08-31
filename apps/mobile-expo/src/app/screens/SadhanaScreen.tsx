@@ -26,6 +26,8 @@ interface SadhanaScreenProps {
   thisWeekRounds: number;
   thisMonthRounds: number;
   handleJapaRoundChange: (amount: number) => void;
+  nbsJoined: boolean;
+  onToggleNbs: (val: boolean) => void;
 }
 
 export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
@@ -52,8 +54,26 @@ export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
   thisWeekRounds,
   thisMonthRounds,
   handleJapaRoundChange,
+  nbsJoined,
+  onToggleNbs,
 }) => {
   const [subTab, setSubTab] = useState<'japa' | 'sadhana'>('japa');
+
+  const getFormattedDate = () => {
+    const d = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `Today, ${d.getDate()} ${months[d.getMonth()]}`;
+  };
+
+  const isNbsCheckInWindow = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTimeInMinutes = hours * 60 + minutes;
+    const startInMinutes = 6 * 60 + 30; // 6:30 AM
+    const endInMinutes = 7 * 60 + 30;   // 7:30 AM
+    return currentTimeInMinutes >= startInMinutes && currentTimeInMinutes <= endInMinutes;
+  };
 
   // Completed items count for daily progress
   const sadhanaCompletedCount = [
@@ -61,9 +81,10 @@ export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
     sadhanaReading,
     sadhanaArati,
     sadhanaPrayer,
-    sadhanaLecture
+    sadhanaLecture,
+    nbsJoined
   ].filter(Boolean).length;
-  const sadhanaTotalCount = 5;
+  const sadhanaTotalCount = 6;
 
   // Streak details loaded dynamically from backend
 
@@ -192,7 +213,7 @@ export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
           {/* Date Selector */}
           <View style={styles.dateSelector}>
             <TouchableOpacity><Text style={[styles.dateArrow, { color: colors.textSub }]}>‹</Text></TouchableOpacity>
-            <Text style={[styles.dateText, { color: colors.textMain }]}>Today, 21 May</Text>
+            <Text style={[styles.dateText, { color: colors.textMain }]}>{getFormattedDate()}</Text>
             <TouchableOpacity><Text style={[styles.dateArrow, { color: colors.textSub }]}>›</Text></TouchableOpacity>
           </View>
 
@@ -265,6 +286,38 @@ export const SadhanaScreen: React.FC<SadhanaScreenProps> = ({
               <View style={styles.checkTextInfo}>
                 <Text style={[styles.checkTitle, { color: colors.textMain, textDecorationLine: sadhanaLecture ? 'line-through' : 'none' }]}>Spiritual Lecture</Text>
                 <Text style={[styles.checkSub, { color: colors.textSub }]}>20 min</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Nityam Bhagavata Sevaya */}
+            <TouchableOpacity 
+              onPress={() => {
+                if (isNbsCheckInWindow() || nbsJoined) {
+                  onToggleNbs(!nbsJoined);
+                }
+              }}
+              style={[
+                styles.checkRow, 
+                { 
+                  backgroundColor: colors.card, 
+                  borderColor: colors.cardBorder,
+                  opacity: (isNbsCheckInWindow() || nbsJoined) ? 1.0 : 0.5 
+                }
+              ]}
+              disabled={!isNbsCheckInWindow() && nbsJoined}
+            >
+              <View style={[styles.checkbox, { borderColor: colors.accentGold, backgroundColor: nbsJoined ? colors.accentGold : 'transparent' }]}>
+                {nbsJoined && <Text style={styles.checkMarkIcon}>✓</Text>}
+              </View>
+              <View style={styles.checkTextInfo}>
+                <Text style={[styles.checkTitle, { color: colors.textMain, textDecorationLine: nbsJoined ? 'line-through' : 'none' }]}>
+                  {t.nbsTitle || 'Nityam Bhagavata Sevaya'}
+                </Text>
+                <Text style={[styles.checkSub, { color: colors.textSub }]}>
+                  {isNbsCheckInWindow() || nbsJoined 
+                    ? '4:30 AM – 7:00 AM' 
+                    : '4:30 AM – 7:00 AM (Check-in open 6:30 – 7:30 AM 🙏)'}
+                </Text>
               </View>
             </TouchableOpacity>
           </View>

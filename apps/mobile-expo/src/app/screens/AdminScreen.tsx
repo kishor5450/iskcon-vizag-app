@@ -263,7 +263,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
               // Get styling based on rank
               const isTop3 = rank <= 3;
               const rankEmoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-              const rankColor = rank === 1 ? '#D7A15C' : rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : colors.textSub;
+              const rankColor = rank === 1 ? '#ffd700' : rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : colors.textSub;
 
               return (
                 <View

@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: '#D7A15C',
+    borderColor: '#ffd700',
   },
   formLogo: {
     width: 90,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: '#D7A15C',
+    borderColor: '#ffd700',
   },
   welcomeBrand: {
     fontSize: 24,
