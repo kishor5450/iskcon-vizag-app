@@ -346,7 +346,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
                     {/* NBS */}
                     <View style={[styles.badgeIndicator, { backgroundColor: todayRecord?.nbsJoined ? 'rgba(92, 184, 92, 0.15)' : 'rgba(128,128,128,0.05)' }]}>
-                      <Text style={[styles.badgeEmoji, !todayRecord?.nbsJoined && { opacity: 0.35 }]}>🕓</Text>
+                      <Text style={[styles.badgeEmoji, !todayRecord?.nbsJoined && { opacity: 0.35 }]}>🔔</Text>
                       <Text style={[styles.badgeLabel, { color: todayRecord?.nbsJoined ? '#5CB85C' : colors.textSub }]}>NBS</Text>
                     </View>
                   </View>
@@ -381,7 +381,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
           {/* Create Announcement Box */}
           <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-            <Text style={[styles.formHeader, { color: colors.textMain }]}>📢 Post Temple Update</Text>
+            <Text style={[styles.formHeader, { color: colors.textMain }]}>🐚 Post Temple Update</Text>
 
             {formSuccess ? <Text style={styles.successText}>{formSuccess}</Text> : null}
             {formError ? <Text style={styles.errorText}>{formError}</Text> : null}

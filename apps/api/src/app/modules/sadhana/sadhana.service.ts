@@ -122,4 +122,36 @@ export class SadhanaService {
       devotee.bestStreak = devotee.currentStreak;
     }
   }
+
+  async getCommunityStats() {
+    const roundsResult = await this.recordRepository
+      .createQueryBuilder('record')
+      .select('SUM(record.japaRoundsCount)', 'totalJapaRounds')
+      .getRawOne();
+      
+    const nbsResult = await this.recordRepository
+      .createQueryBuilder('record')
+      .where('record.nbsJoined = :nbsJoined', { nbsJoined: true })
+      .select('COUNT(record.id)', 'totalNbsAttended')
+      .getRawOne();
+      
+    const readingResult = await this.recordRepository
+      .createQueryBuilder('record')
+      .where('record.readingCompleted = :readingCompleted', { readingCompleted: true })
+      .select('COUNT(record.id)', 'totalReadingSessions')
+      .getRawOne();
+
+    const aratiResult = await this.recordRepository
+      .createQueryBuilder('record')
+      .where('record.mangalaArati = :mangalaArati', { mangalaArati: true })
+      .select('COUNT(record.id)', 'totalAratis')
+      .getRawOne();
+
+    return {
+      totalJapaRounds: parseInt(roundsResult?.totalJapaRounds || '0', 10),
+      totalNbsAttended: parseInt(nbsResult?.totalNbsAttended || '0', 10),
+      totalReadingSessions: parseInt(readingResult?.totalReadingSessions || '0', 10),
+      totalAratis: parseInt(aratiResult?.totalAratis || '0', 10)
+    };
+  }
 }

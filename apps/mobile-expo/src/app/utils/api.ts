@@ -181,6 +181,19 @@ export const api = {
     return res.json();
   },
 
+  async getCommunityStats(token: string): Promise<{ totalJapaRounds: number; totalNbsAttended: number; totalReadingSessions: number; totalAratis: number }> {
+    const res = await fetch(`${API_URL}/sadhana/community-stats`, {
+      method: 'GET',
+      headers: getHeaders(token),
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch community statistics');
+    }
+
+    return res.json();
+  },
+
   async getAnnouncements(token: string, officialOnly?: boolean): Promise<IAnnouncement[]> {
     const query = officialOnly !== undefined ? `?official=${officialOnly}` : '';
     const res = await fetch(`${API_URL}/announcements${query}`, {

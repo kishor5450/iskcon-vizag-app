@@ -135,7 +135,7 @@ export const UpdatesScreen: React.FC<UpdatesScreenProps> = ({
 
   return (
     <View style={styles.tabContainer}>
-      <Text style={[styles.sectionTitle, { color: colors.textMain }]}>📢 Announcements</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textMain }]}>🐚 Announcements</Text>
 
       {/* Feed Filters */}
       <View style={[styles.filterSegmentContainer, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -183,7 +183,7 @@ export const UpdatesScreen: React.FC<UpdatesScreenProps> = ({
             <View key={item.id} style={[styles.feedCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
               <View style={styles.feedHeader}>
                 <Text style={[styles.feedSourceTag, { color: item.official ? colors.accentGold : colors.navInactive }]}>
-                  {item.official ? `📢 ${t.official}` : `👥 ${t.community}`}
+                  {item.official ? `🐚 ${t.official}` : `🪷 ${t.community}`}
                 </Text>
                 <Text style={[styles.feedTime, { color: colors.textSub }]}>{item.date}</Text>
               </View>

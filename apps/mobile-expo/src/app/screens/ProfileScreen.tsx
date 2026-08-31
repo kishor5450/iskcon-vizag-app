@@ -78,10 +78,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   };
 
   const menuItems = [
-    { title: 'My Goals', desc: 'Daily targets and preferences', icon: '🎯', action: () => {} },
+    { title: 'My Goals', desc: 'Daily targets and preferences', icon: '🕉️', action: () => {} },
     { title: 'Reminders', desc: 'Manage your reminders', icon: '🔔', action: () => {} },
-    { title: 'My Activity', desc: `Sadhana history (Total: ${totalRoundsChanted} rounds)`, icon: '📊', action: () => onNavigate(AppTab.JOURNEY) },
-    { title: 'About ISKCON Vizag', desc: 'Temple info and timings', icon: 'ℹ️', action: () => setAboutModalVisible(true) },
+    { title: 'My Activity', desc: `Sadhana history (Total: ${totalRoundsChanted} rounds)`, icon: '📜', action: () => onNavigate(AppTab.JOURNEY) },
+    { title: 'About ISKCON Vizag', desc: 'Temple info and timings', icon: '🛕', action: () => setAboutModalVisible(true) },
   ];
 
   return (
@@ -154,7 +154,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
         {/* Preferences and settings */}
         <View style={[styles.settingsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.settingsHeader, { color: colors.textMain }]}>⚙️ App Preferences</Text>
+          <Text style={[styles.settingsHeader, { color: colors.textMain }]}>🪷 App Preferences</Text>
           
           {/* Language Toggle Row */}
           <View style={styles.settingsRow}>

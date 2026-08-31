@@ -405,6 +405,8 @@ export const App = () => {
             <CommunityScreen
               t={t}
               colors={colors}
+              token={jwtToken}
+              onNavigate={setActiveTab}
             />
           )}
 

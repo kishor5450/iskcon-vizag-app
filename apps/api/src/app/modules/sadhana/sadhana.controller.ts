@@ -21,6 +21,11 @@ export class SadhanaController {
     return this.sadhanaService.getRecordForDate(req.user.sub, date);
   }
 
+  @Get('community-stats')
+  async getCommunityStats() {
+    return this.sadhanaService.getCommunityStats();
+  }
+
   @Post('log')
   async logSadhana(
     @Request() req,

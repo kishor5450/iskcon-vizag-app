@@ -233,9 +233,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     : fallbackAlerts;
 
   const quickLinks = [
-    { title: 'Temple Timings', icon: '⏰' },
+    { title: 'Temple Timings', icon: '🔔' },
     { title: 'Darshan', icon: '🕉️' },
-    { title: 'Donate', icon: '💳' },
+    { title: 'Donate', icon: '🪙' },
     { title: 'Seva', icon: '🪷' },
     { title: 'Events', icon: '📅' },
     { title: 'Prasadam', icon: '🍲' },
@@ -559,7 +559,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               ]}
             >
               <Text style={{ fontSize: 16 }}>
-                {alert.type === AnnouncementType.TEMPLE ? '⏰' : alert.type === AnnouncementType.CLASSES ? '📖' : '📢'}
+                {alert.type === AnnouncementType.TEMPLE ? '🛕' : alert.type === AnnouncementType.CLASSES ? '📖' : '🐚'}
               </Text>
             </View>
             <View style={styles.alertContent}>
