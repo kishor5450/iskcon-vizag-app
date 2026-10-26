@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Image, ActivityIndicator } from 'react-native';
 import { PreferredLanguage, AppTab } from '@temple/models';
 import * as ImagePicker from 'expo-image-picker';
-import { api } from '../utils/api';
+import { api } from '../../utils/api';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface ProfileScreenProps {

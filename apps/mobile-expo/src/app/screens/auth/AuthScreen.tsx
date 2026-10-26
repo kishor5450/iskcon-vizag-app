@@ -12,9 +12,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
+  Modal,
 } from 'react-native';
 import { IDevotee, RegisterRequestDto, PreferredLanguage } from '@temple/models';
-import { api } from '../utils/api';
+import { api } from '../../utils/api';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface AuthScreenProps {
   colors: any;
@@ -36,6 +38,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [googleEmailInput, setGoogleEmailInput] = useState('');
+  const [googleStep, setGoogleStep] = useState<1 | 2>(1);
+  const [selectedGoogleEmail, setSelectedGoogleEmail] = useState('');
+  const [googlePasswordInput, setGooglePasswordInput] = useState('');
+  const [showCustomGoogleEmail, setShowCustomGoogleEmail] = useState(false);
+  const [googleAccounts, setGoogleAccounts] = useState<string[]>(['devotee108@gmail.com']);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -115,6 +124,262 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
     }
   };
 
+  const handleGoogleSignIn = () => {
+    setErrorMsg('');
+    setGoogleStep(1);
+    setShowCustomGoogleEmail(false);
+    setShowGoogleModal(true);
+  };
+
+  const handleAddAccount = () => {
+    if (!googleEmailInput || !googleEmailInput.includes('@')) {
+      setErrorMsg('Please enter a valid Google email address');
+      return;
+    }
+    const newEmail = googleEmailInput.trim().toLowerCase();
+    if (!googleAccounts.includes(newEmail)) {
+      setGoogleAccounts([...googleAccounts, newEmail]);
+    }
+    setSelectedGoogleEmail(newEmail);
+    setGoogleStep(2);
+    setErrorMsg('');
+    setGoogleEmailInput('');
+  };
+
+  const submitGoogleSignIn = async () => {
+    if (!googlePasswordInput) {
+      setErrorMsg('Please enter your password');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg('');
+    const email = selectedGoogleEmail;
+    const username = email.split('@')[0];
+    const name = username.charAt(0).toUpperCase() + username.slice(1);
+    const password = googlePasswordInput;
+    try {
+      const loginRes = await api.login(email, password);
+      onLoginSuccess(loginRes.token, loginRes.devotee);
+      setShowGoogleModal(false);
+      setGoogleEmailInput('');
+      setGooglePasswordInput('');
+      setSelectedGoogleEmail('');
+      setGoogleStep(1);
+      setShowCustomGoogleEmail(false);
+    } catch (err: any) {
+      if (err.message && err.message.includes('credentials')) {
+        setErrorMsg('Invalid password for this account.');
+      } else {
+        try {
+          await api.register(
+            new RegisterRequestDto(
+              name + ' (Google)',
+              email,
+              password,
+              undefined,
+              PreferredLanguage.ENGLISH
+            )
+          );
+          const loginRes = await api.login(email, password);
+          onLoginSuccess(loginRes.token, loginRes.devotee);
+          setShowGoogleModal(false);
+          setGoogleEmailInput('');
+          setGooglePasswordInput('');
+          setSelectedGoogleEmail('');
+          setGoogleStep(1);
+          setShowCustomGoogleEmail(false);
+        } catch (regErr: any) {
+          setErrorMsg('Failed to log in with Google: ' + regErr.message);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderGoogleModal = () => {
+    return (
+      <Modal
+        visible={showGoogleModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => {
+          setShowGoogleModal(false);
+          setErrorMsg('');
+          setGoogleEmailInput('');
+          setGooglePasswordInput('');
+          setSelectedGoogleEmail('');
+          setGoogleStep(1);
+          setShowCustomGoogleEmail(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={[styles.dragBar, { backgroundColor: colors.divider }]} />
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 12 }}>
+              <MaterialCommunityIcons name="google" size={24} color={colors.accentGold} style={{ marginRight: 8 }} />
+              <Text style={[styles.modalTitle, { color: colors.pureWhite, fontSize: 18, marginBottom: 0 }]}>Sign in with Google</Text>
+            </View>
+
+            {googleStep === 1 ? (
+              <>
+                <Text style={[styles.modalSubtitle, { color: '#D4C9E8', marginBottom: 16 }]}>
+                  Choose an account to continue to ISKCON Vizag
+                </Text>
+
+                {!showCustomGoogleEmail ? (
+                  <View style={{ width: '100%', marginBottom: 16 }}>
+                    {googleAccounts.map((account, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        style={[styles.accountOptionBtn, { backgroundColor: 'rgba(27, 12, 48, 0.6)', borderColor: colors.cardBorder }]}
+                        onPress={() => {
+                          setSelectedGoogleEmail(account);
+                          setGoogleStep(2);
+                        }}
+                      >
+                        <View style={[styles.avatarCircle, { backgroundColor: colors.accentGold }]}>
+                          <Text style={styles.avatarText}>{account.charAt(0).toUpperCase()}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '600' }}>{account.split('@')[0]}</Text>
+                          <Text style={{ color: '#D4C9E8', fontSize: 12 }}>{account}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+
+                    <TouchableOpacity
+                      style={[styles.accountOptionBtn, { backgroundColor: 'rgba(27, 12, 48, 0.3)', borderColor: colors.cardBorder, borderStyle: 'dashed' }]}
+                      onPress={() => {
+                        setShowCustomGoogleEmail(true);
+                        setErrorMsg('');
+                      }}
+                    >
+                      <MaterialCommunityIcons name="plus-circle-outline" size={20} color={colors.accentGold} style={{ marginRight: 12, marginLeft: 4 }} />
+                      <Text style={{ color: colors.accentGold, fontSize: 14, fontWeight: '600' }}>Use another account</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={{ width: '100%', marginBottom: 16 }}>
+                    <Text style={[styles.inputLabel, { color: '#D4C9E8', fontSize: 12 }]}>Email or phone</Text>
+                    <TextInput
+                      style={[styles.modalInput, { 
+                        backgroundColor: 'rgba(27, 12, 48, 0.85)', 
+                        borderColor: 'rgba(255, 215, 0, 0.35)',
+                        color: '#FFF'
+                      }]}
+                      placeholder="example@gmail.com"
+                      placeholderTextColor="#796796"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      value={googleEmailInput}
+                      onChangeText={setGoogleEmailInput}
+                    />
+
+                    {errorMsg ? (
+                      <Text style={styles.modalErrorText}>⚠️ {errorMsg}</Text>
+                    ) : null}
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8 }}>
+                      <TouchableOpacity 
+                        style={[styles.modalBtnCancel, { borderColor: colors.accentGold }]}
+                        onPress={() => {
+                          setShowCustomGoogleEmail(false);
+                          setErrorMsg('');
+                          setGoogleEmailInput('');
+                        }}
+                      >
+                        <Text style={[styles.modalBtnCancelText, { color: colors.pureWhite }]}>Back</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity 
+                        style={[styles.modalBtnSubmit, { backgroundColor: colors.accentGold }]}
+                        onPress={handleAddAccount}
+                      >
+                        <Text style={[styles.modalBtnSubmitText, { color: '#160826' }]}>Next</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+
+                {!showCustomGoogleEmail && (
+                  <TouchableOpacity 
+                    style={[styles.modalBtnCancel, { width: '100%', borderColor: colors.accentGold, marginTop: 8 }]}
+                    onPress={() => {
+                      setShowGoogleModal(false);
+                      setErrorMsg('');
+                    }}
+                  >
+                    <Text style={[styles.modalBtnCancelText, { color: colors.pureWhite }]}>Cancel</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            ) : (
+              <>
+                <View style={{ width: '100%', alignItems: 'center', marginBottom: 20 }}>
+                  <View style={[styles.avatarCircleLarge, { backgroundColor: colors.accentGold, marginBottom: 8 }]}>
+                    <Text style={styles.avatarTextLarge}>{selectedGoogleEmail.charAt(0).toUpperCase()}</Text>
+                  </View>
+                  <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>
+                    {selectedGoogleEmail}
+                  </Text>
+                </View>
+
+                <View style={{ width: '100%' }}>
+                  <Text style={[styles.inputLabel, { color: '#D4C9E8', fontSize: 12 }]}>Enter your password</Text>
+                  <TextInput
+                    style={[styles.modalInput, { 
+                      backgroundColor: 'rgba(27, 12, 48, 0.85)', 
+                      borderColor: 'rgba(255, 215, 0, 0.35)',
+                      color: '#FFF'
+                    }]}
+                    placeholder="Enter password"
+                    placeholderTextColor="#796796"
+                    secureTextEntry
+                    value={googlePasswordInput}
+                    onChangeText={setGooglePasswordInput}
+                  />
+                </View>
+
+                {errorMsg ? (
+                  <Text style={styles.modalErrorText}>⚠️ {errorMsg}</Text>
+                ) : null}
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity 
+                    style={[styles.modalBtnCancel, { borderColor: colors.accentGold }]}
+                    onPress={() => {
+                      setGoogleStep(1);
+                      setGooglePasswordInput('');
+                      setErrorMsg('');
+                    }}
+                  >
+                    <Text style={[styles.modalBtnCancelText, { color: colors.pureWhite }]}>Back</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.modalBtnSubmit, { backgroundColor: colors.accentGold }]}
+                    onPress={submitGoogleSignIn}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <ActivityIndicator size="small" color="#160826" />
+                    ) : (
+                      <Text style={[styles.modalBtnSubmitText, { color: '#160826' }]}>Sign In</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   if (authState === 'welcome') {
     return (
       <ImageBackground
@@ -161,6 +426,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 </TouchableOpacity>
 
                 <TouchableOpacity 
+                  style={styles.googleBtn}
+                  onPress={handleGoogleSignIn}
+                >
+                  <MaterialCommunityIcons name="google" size={20} color="#FFF" style={{ marginRight: 10 }} />
+                  <Text style={styles.googleBtnText}>Continue with Google</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
                   style={styles.guestBtn}
                   onPress={handleGuest}
                 >
@@ -170,6 +443,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             )}
           </View>
         </SafeAreaView>
+        {renderGoogleModal()}
       </ImageBackground>
     );
   }
@@ -296,14 +570,24 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             {loading ? (
               <ActivityIndicator size="large" color={colors.accentGold} style={{ marginVertical: 12 }} />
             ) : (
-              <TouchableOpacity 
-                style={[styles.formSubmitBtn, { backgroundColor: colors.accentGold }]}
-                onPress={authState === 'login' ? handleLogin : handleSignup}
-              >
-                <Text style={[styles.formSubmitBtnText, { color: '#160826' }]}>
-                  {authState === 'login' ? 'Log In' : 'Sign Up'}
-                </Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity 
+                  style={[styles.formSubmitBtn, { backgroundColor: colors.accentGold }]}
+                  onPress={authState === 'login' ? handleLogin : handleSignup}
+                >
+                  <Text style={[styles.formSubmitBtnText, { color: '#160826' }]}>
+                    {authState === 'login' ? 'Log In' : 'Sign Up'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.googleBtn}
+                  onPress={handleGoogleSignIn}
+                >
+                  <MaterialCommunityIcons name="google" size={20} color="#FFF" style={{ marginRight: 10 }} />
+                  <Text style={styles.googleBtnText}>Continue with Google</Text>
+                </TouchableOpacity>
+              </>
             )}
 
             <View style={styles.formFooter}>
@@ -330,6 +614,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+      {renderGoogleModal()}
     </ImageBackground>
   );
 };
@@ -433,6 +718,23 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     fontWeight: '500',
   },
+  googleBtn: {
+    width: '100%',
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  googleBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   formContainer: {
     flex: 1,
   },
@@ -527,5 +829,123 @@ const styles = StyleSheet.create({
   underline: {
     textDecorationLine: 'underline',
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(16, 5, 28, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  modalInput: {
+    width: '100%',
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    marginBottom: 16,
+  },
+  modalErrorText: {
+    color: '#EB5757',
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  modalBtnCancel: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  modalBtnCancelText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  modalBtnSubmit: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  modalBtnSubmitText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  accountOptionBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  dragBar: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  avatarCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#160826',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  avatarCircleLarge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarTextLarge: {
+    color: '#160826',
+    fontWeight: 'bold',
+    fontSize: 24,
   },
 });

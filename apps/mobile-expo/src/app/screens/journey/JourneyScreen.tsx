@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { ISadhanaRecord } from '@temple/models';
-import { api } from '../utils/api';
+import { api } from '../../utils/api';
 
 interface JourneyScreenProps {
   t: any;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { IDevotee, AppTab } from '@temple/models';
-import { api } from '../utils/api';
+import { api } from '../../utils/api';
 
 interface CommunityScreenProps {
   t: any;

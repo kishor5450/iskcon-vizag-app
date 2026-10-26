@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { IAnnouncement, AnnouncementType } from '@temple/models';
-import { api } from '../utils/api';
+import { api } from '../../utils/api';
 
 interface DynamicImageProps {
   uri: string;

@@ -13,14 +13,16 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TRANSLATIONS, IDevotee, SadhanaLogRequestDto, ISadhanaRecord, IAnnouncement, PreferredLanguage, AppTab, DevoteeRole } from '@temple/models';
-import { HomeScreen } from './screens/HomeScreen';
-import { SadhanaScreen } from './screens/SadhanaScreen';
-import { UpdatesScreen } from './screens/UpdatesScreen';
-import { JourneyScreen } from './screens/JourneyScreen';
-import { ProfileScreen } from './screens/ProfileScreen';
-import { AuthScreen } from './screens/AuthScreen';
-import { CommunityScreen } from './screens/CommunityScreen';
-import { AdminScreen } from './screens/AdminScreen';
+import {
+  HomeScreen,
+  SadhanaScreen,
+  UpdatesScreen,
+  JourneyScreen,
+  ProfileScreen,
+  AuthScreen,
+  CommunityScreen,
+  AdminScreen,
+} from './screens';
 import { api } from './utils/api';
 
 export const App = () => {
