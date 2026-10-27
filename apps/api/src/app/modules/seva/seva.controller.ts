@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { SevaService } from './seva.service';
 import {
-  ISevaOpportunity,
   CreateSevaRequestDto,
   RegisterForSevaByIdRequest,
   GetAllSevasRequest,
@@ -18,8 +17,6 @@ export class SevaController {
   constructor(private readonly sevaService: SevaService) {}
 
   @Post('/getAllSevas')
-  @Post('/getAll')
-  @Post('list')
   async getAllSevas(
     @Body() req: GetAllSevasRequest,
   ): Promise<GetAllSevasResponse> {
@@ -30,16 +27,7 @@ export class SevaController {
     }
   }
 
-  // Legacy GET for mobile compatibility
-  @Get()
-  async getAllSevasLegacy(): Promise<ISevaOpportunity[]> {
-    const res = await this.sevaService.getAllSevas();
-    return res.data || [];
-  }
-
   @Post('/createSeva')
-  @Post('/create')
-  @Post()
   async createSeva(
     @Body() req: CreateSevaRequestDto,
   ): Promise<CreateSevaResponse> {
@@ -51,16 +39,11 @@ export class SevaController {
   }
 
   @Post('/registerForSevaById')
-  @Post('/registerForSeva')
-  @Post('/register')
-  @Post(':id/register')
   async registerForSevaById(
-    @Param('id') paramId?: string,
-    @Body() req?: RegisterForSevaByIdRequest | { id?: number },
+    @Body() req: RegisterForSevaByIdRequest,
   ): Promise<RegisterForSevaResponse> {
     try {
-      const targetId = paramId ? Number(paramId) : Number(req?.id);
-      return await this.sevaService.registerForSevaById({ id: targetId });
+      return await this.sevaService.registerForSevaById(req);
     } catch (error) {
       return returnException(RegisterForSevaResponse, error);
     }

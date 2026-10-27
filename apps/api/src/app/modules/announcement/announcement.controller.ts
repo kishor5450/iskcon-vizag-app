@@ -1,11 +1,7 @@
 import {
   Controller,
-  Get,
   Post,
-  Delete,
   Body,
-  Query,
-  Param,
   UseGuards,
   Request,
   UseInterceptors,
@@ -14,9 +10,7 @@ import {
 } from '@nestjs/common';
 import { AnnouncementService } from './announcement.service';
 import {
-  IAnnouncement,
   CreateAnnouncementRequestDto,
-  GlobalResponseObject,
   DeleteAnnouncementByIdRequest,
   GetAllAnnouncementsRequest,
   GetAllAnnouncementsResponse,
@@ -35,8 +29,6 @@ export class AnnouncementController {
   constructor(private readonly announcementService: AnnouncementService) {}
 
   @Post('/getAllAnnouncements')
-  @Post('/getAll')
-  @Post('list')
   async getAllAnnouncements(
     @Body() req: GetAllAnnouncementsRequest,
   ): Promise<GetAllAnnouncementsResponse> {
@@ -47,24 +39,7 @@ export class AnnouncementController {
     }
   }
 
-  // Legacy GET for mobile app compatibility
-  @Get()
-  async getAllAnnouncementsLegacy(
-    @Query('official') queryOfficial?: string,
-  ): Promise<IAnnouncement[]> {
-    const isOfficial =
-      queryOfficial === undefined
-        ? undefined
-        : String(queryOfficial) === 'true';
-    const res = await this.announcementService.getAllAnnouncements({
-      official: isOfficial,
-    });
-    return res.data || [];
-  }
-
   @Post('/createAnnouncement')
-  @Post('/create')
-  @Post()
   async createAnnouncement(
     @Body() req: CreateAnnouncementRequestDto,
   ): Promise<CreateAnnouncementResponse> {
@@ -76,26 +51,17 @@ export class AnnouncementController {
   }
 
   @Post('/deleteAnnouncementById')
-  @Post('/deleteAnnouncement')
-  @Post('/delete')
-  @Post(':id/delete')
-  @Delete(':id')
   async deleteAnnouncementById(
-    @Param('id') id?: string,
-    @Body() req?: DeleteAnnouncementByIdRequest | { id?: number },
+    @Body() req: DeleteAnnouncementByIdRequest,
   ): Promise<DeleteAnnouncementResponse> {
     try {
-      const targetId = id ? Number(id) : Number(req?.id);
-      return await this.announcementService.deleteAnnouncementById({
-        id: targetId,
-      });
+      return await this.announcementService.deleteAnnouncementById(req);
     } catch (error) {
       return returnException(DeleteAnnouncementResponse, error);
     }
   }
 
   @Post('/upload')
-  @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({

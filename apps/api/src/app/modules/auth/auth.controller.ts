@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Get,
-  UseGuards,
-  Request,
-  Put,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   LoginResponseDto,
@@ -22,8 +14,6 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('/registerDevotee')
-  @Post('/register')
-  @Post('register')
   async registerDevotee(@Body() req: RegisterRequestDto): Promise<IDevotee> {
     try {
       return await this.authService.registerDevotee(req);
@@ -33,8 +23,6 @@ export class AuthController {
   }
 
   @Post('/loginDevotee')
-  @Post('/login')
-  @Post('login')
   async loginDevotee(@Body() req: LoginRequestDto): Promise<LoginResponseDto> {
     try {
       return await this.authService.loginDevotee(req);
@@ -45,9 +33,6 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Post('/getDevoteeProfile')
-  @Post('/getProfile')
-  @Post('profile')
-  @Get('profile')
   async getDevoteeProfile(@Request() req: any): Promise<IDevotee> {
     try {
       return await this.authService.getDevoteeProfile(req.user.sub);
@@ -58,9 +43,6 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Post('/updateDevoteePreferences')
-  @Post('/updatePreferences')
-  @Post('preferences')
-  @Put('preferences')
   async updateDevoteePreferences(
     @Request() req: any,
     @Body() body: UpdatePreferencesRequestDto,
@@ -77,8 +59,6 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Post('/getAllDevotees')
-  @Post('devotees')
-  @Get('devotees')
   async getAllDevotees(): Promise<IDevotee[]> {
     try {
       return await this.authService.getAllDevotees();
@@ -89,9 +69,6 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Post('/updateDevoteeAvatar')
-  @Post('/updateAvatar')
-  @Post('avatar')
-  @Put('avatar')
   async updateDevoteeAvatar(
     @Request() req: any,
     @Body() body: { avatarUrl: string },

@@ -1,6 +1,5 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
   UseGuards,
@@ -17,9 +16,6 @@ export class SadhanaController {
   constructor(private readonly sadhanaService: SadhanaService) {}
 
   @Post('/getSadhanaHistory')
-  @Post('/getHistory')
-  @Post('history')
-  @Get('history')
   async getSadhanaHistory(@Request() req: any): Promise<ISadhanaRecord[]> {
     try {
       return await this.sadhanaService.getSadhanaHistory(req.user.sub);
@@ -29,13 +25,10 @@ export class SadhanaController {
   }
 
   @Post('/getTodaySadhanaRecord')
-  @Post('/getTodayRecord')
-  @Post('today')
-  @Get('today')
   async getTodaySadhanaRecord(
     @Request() req: any,
-    @Query('date') queryDate?: string,
     @Body('date') bodyDate?: string,
+    @Query('date') queryDate?: string,
   ): Promise<ISadhanaRecord | null> {
     try {
       const date = bodyDate || queryDate || '';
@@ -49,9 +42,6 @@ export class SadhanaController {
   }
 
   @Post('/getCommunitySadhanaStats')
-  @Post('/getCommunityStats')
-  @Post('community-stats')
-  @Get('community-stats')
   async getCommunitySadhanaStats() {
     try {
       return await this.sadhanaService.getCommunitySadhanaStats();
@@ -61,8 +51,6 @@ export class SadhanaController {
   }
 
   @Post('/logSadhanaRecord')
-  @Post('/logSadhana')
-  @Post('log')
   async logSadhanaRecord(
     @Request() req: any,
     @Body() recordDto: SadhanaLogRequestDto,

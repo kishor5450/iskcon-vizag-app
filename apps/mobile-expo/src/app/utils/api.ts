@@ -6,7 +6,7 @@ import {
   LoginResponseDto,
   RegisterRequestDto,
   LoginRequestDto,
-  SadhanaLogRequestDto
+  SadhanaLogRequestDto,
 } from '@temple/models';
 
 const DEV_IP_OVERRIDE = ''; // Set to your PC's Wi-Fi IP (e.g. '192.168.99.80') if auto-detection fails
@@ -28,7 +28,8 @@ const getApiUrl = () => {
     // 2. Try expo-constants (works in Expo Go / New Architecture)
     try {
       const Constants = require('expo-constants').default;
-      const hostUri = Constants?.expoConfig?.hostUri || Constants?.manifest?.hostUri;
+      const hostUri =
+        Constants?.expoConfig?.hostUri || Constants?.manifest?.hostUri;
       if (hostUri) {
         const host = hostUri.split(':')[0];
         return `http://${host}:3000/api`;
@@ -57,7 +58,9 @@ export const resolveImageUrl = (url?: string): string | undefined => {
   if (!url) return undefined;
 
   // Match absolute local URLs pointing to localhost, loopback, or any IP address on port 3000
-  const match = url.match(/^http:\/\/(?:localhost|127\.0\.0\.1|10\.0\.2\.2|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):3000(.*)$/);
+  const match = url.match(
+    /^http:\/\/(?:localhost|127\.0\.0\.1|10\.0\.2\.2|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):3000(.*)$/,
+  );
   if (match) {
     const apiBase = API_URL.replace('/api', ''); // e.g. http://192.168.99.80:3000
     return `${apiBase}${match[1]}`;
@@ -85,7 +88,7 @@ const getHeaders = (token?: string) => {
 
 export const api = {
   async login(email: string, passwordPlain: string): Promise<LoginResponseDto> {
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetch(`${API_URL}/auth/loginDevotee`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ email, passwordPlain }),
@@ -104,7 +107,7 @@ export const api = {
   },
 
   async register(devotee: RegisterRequestDto): Promise<IDevotee> {
-    const res = await fetch(`${API_URL}/auth/register`, {
+    const res = await fetch(`${API_URL}/auth/registerDevotee`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(devotee),
@@ -123,9 +126,10 @@ export const api = {
   },
 
   async getProfile(token: string): Promise<IDevotee> {
-    const res = await fetch(`${API_URL}/auth/profile`, {
-      method: 'GET',
+    const res = await fetch(`${API_URL}/auth/getDevoteeProfile`, {
+      method: 'POST',
       headers: getHeaders(token),
+      body: JSON.stringify({}),
     });
 
     if (!res.ok) {
@@ -139,10 +143,14 @@ export const api = {
     return data;
   },
 
-  async getTodayRecord(token: string, date: string): Promise<ISadhanaRecord | null> {
-    const res = await fetch(`${API_URL}/sadhana/today?date=${date}`, {
-      method: 'GET',
+  async getTodayRecord(
+    token: string,
+    date: string,
+  ): Promise<ISadhanaRecord | null> {
+    const res = await fetch(`${API_URL}/sadhana/getTodaySadhanaRecord`, {
+      method: 'POST',
       headers: getHeaders(token),
+      body: JSON.stringify({ date }),
     });
 
     if (!res.ok) {
@@ -153,8 +161,11 @@ export const api = {
     return data ? JSON.parse(data) : null;
   },
 
-  async submitSadhanaLog(token: string, dto: SadhanaLogRequestDto): Promise<ISadhanaRecord> {
-    const res = await fetch(`${API_URL}/sadhana/log`, {
+  async submitSadhanaLog(
+    token: string,
+    dto: SadhanaLogRequestDto,
+  ): Promise<ISadhanaRecord> {
+    const res = await fetch(`${API_URL}/sadhana/logSadhanaRecord`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(dto),
@@ -169,9 +180,10 @@ export const api = {
   },
 
   async getSadhanaHistory(token: string): Promise<ISadhanaRecord[]> {
-    const res = await fetch(`${API_URL}/sadhana/history`, {
-      method: 'GET',
+    const res = await fetch(`${API_URL}/sadhana/getSadhanaHistory`, {
+      method: 'POST',
       headers: getHeaders(token),
+      body: JSON.stringify({}),
     });
 
     if (!res.ok) {
@@ -181,10 +193,16 @@ export const api = {
     return res.json();
   },
 
-  async getCommunityStats(token: string): Promise<{ totalJapaRounds: number; totalNbsAttended: number; totalReadingSessions: number; totalAratis: number }> {
-    const res = await fetch(`${API_URL}/sadhana/community-stats`, {
-      method: 'GET',
+  async getCommunityStats(token: string): Promise<{
+    totalJapaRounds: number;
+    totalNbsAttended: number;
+    totalReadingSessions: number;
+    totalAratis: number;
+  }> {
+    const res = await fetch(`${API_URL}/sadhana/getCommunitySadhanaStats`, {
+      method: 'POST',
       headers: getHeaders(token),
+      body: JSON.stringify({}),
     });
 
     if (!res.ok) {
@@ -194,18 +212,22 @@ export const api = {
     return res.json();
   },
 
-  async getAnnouncements(token: string, officialOnly?: boolean): Promise<IAnnouncement[]> {
-    const query = officialOnly !== undefined ? `?official=${officialOnly}` : '';
-    const res = await fetch(`${API_URL}/announcements${query}`, {
-      method: 'GET',
+  async getAnnouncements(
+    token: string,
+    officialOnly?: boolean,
+  ): Promise<IAnnouncement[]> {
+    const res = await fetch(`${API_URL}/announcements/getAllAnnouncements`, {
+      method: 'POST',
       headers: getHeaders(token),
+      body: JSON.stringify({ official: officialOnly }),
     });
 
     if (!res.ok) {
       throw new Error('Failed to fetch announcements');
     }
 
-    const data = await res.json();
+    const json = await res.json();
+    const data = Array.isArray(json) ? json : json.data || [];
     return data.map((ann: any) => ({
       ...ann,
       image: ann.image ? resolveImageUrl(ann.image) : ann.image,
@@ -213,9 +235,10 @@ export const api = {
   },
 
   async getDevotees(token: string): Promise<IDevotee[]> {
-    const res = await fetch(`${API_URL}/auth/devotees`, {
-      method: 'GET',
+    const res = await fetch(`${API_URL}/auth/getAllDevotees`, {
+      method: 'POST',
       headers: getHeaders(token),
+      body: JSON.stringify({}),
     });
     if (!res.ok) {
       throw new Error('Failed to fetch devotees list');
@@ -228,7 +251,7 @@ export const api = {
   },
 
   async createAnnouncement(token: string, dto: any): Promise<IAnnouncement> {
-    const res = await fetch(`${API_URL}/announcements`, {
+    const res = await fetch(`${API_URL}/announcements/createAnnouncement`, {
       method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify(dto),
@@ -236,7 +259,8 @@ export const api = {
     if (!res.ok) {
       throw new Error('Failed to create announcement');
     }
-    const data = await res.json();
+    const json = await res.json();
+    const data = json.data || json;
     if (data.image) {
       data.image = resolveImageUrl(data.image);
     }
@@ -244,16 +268,20 @@ export const api = {
   },
 
   async deleteAnnouncement(token: string, id: number): Promise<void> {
-    const res = await fetch(`${API_URL}/announcements/${id}`, {
-      method: 'DELETE',
+    const res = await fetch(`${API_URL}/announcements/deleteAnnouncementById`, {
+      method: 'POST',
       headers: getHeaders(token),
+      body: JSON.stringify({ id }),
     });
     if (!res.ok) {
       throw new Error('Failed to delete announcement');
     }
   },
 
-  async uploadAnnouncementImage(token: string, fileUri: string): Promise<{ url: string }> {
+  async uploadAnnouncementImage(
+    token: string,
+    fileUri: string,
+  ): Promise<{ url: string }> {
     const formData = new FormData();
     const filename = fileUri.split('/').pop() || 'upload.jpg';
     const match = /\.(\w+)$/.exec(filename);
@@ -268,7 +296,7 @@ export const api = {
     const res = await fetch(`${API_URL}/announcements/upload`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: formData,
     });
@@ -285,8 +313,8 @@ export const api = {
   },
 
   async updateAvatar(token: string, avatarUrl: string): Promise<IDevotee> {
-    const res = await fetch(`${API_URL}/auth/avatar`, {
-      method: 'PUT',
+    const res = await fetch(`${API_URL}/auth/updateDevoteeAvatar`, {
+      method: 'POST',
       headers: getHeaders(token),
       body: JSON.stringify({ avatarUrl }),
     });
