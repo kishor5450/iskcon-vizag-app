@@ -1,39 +1,39 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { AnnouncementRepository } from '../../entities/repository';
 import { AnnouncementEntity } from '../../entities/announcement.entity';
 import { IAnnouncement, CreateAnnouncementRequestDto, AnnouncementType } from '@temple/models';
 
 @Injectable()
 export class AnnouncementService implements OnModuleInit {
   constructor(
-    @InjectRepository(AnnouncementEntity)
-    private readonly announcementRepository: Repository<AnnouncementEntity>
+    private readonly announcementRepository: AnnouncementRepository
   ) {}
 
   async onModuleInit() {
     await this.seedDefaultAnnouncements();
   }
 
-  async getAll(official?: boolean): Promise<IAnnouncement[]> {
-    if (official !== undefined) {
-      return this.announcementRepository.find({
-        where: { official },
-        order: { id: 'DESC' },
-      });
-    }
-    return this.announcementRepository.find({
-      order: { id: 'DESC' },
-    });
+  async getAllAnnouncements(official?: boolean): Promise<IAnnouncement[]> {
+    return this.announcementRepository.getAllAnnouncements(official);
   }
 
+  // Alias for backward compatibility
+  async getAll(official?: boolean): Promise<IAnnouncement[]> {
+    return this.getAllAnnouncements(official);
+  }
+
+  async createAnnouncement(dto: CreateAnnouncementRequestDto): Promise<IAnnouncement> {
+    const item = this.announcementRepository.createAnnouncement(dto);
+    return this.announcementRepository.saveAnnouncement(item);
+  }
+
+  // Alias for backward compatibility
   async create(dto: CreateAnnouncementRequestDto): Promise<IAnnouncement> {
-    const item = this.announcementRepository.create(dto);
-    return this.announcementRepository.save(item);
+    return this.createAnnouncement(dto);
   }
 
   private async seedDefaultAnnouncements(): Promise<void> {
-    const count = await this.announcementRepository.count();
+    const count = await this.announcementRepository.countAnnouncements();
     if (count > 0) return;
 
     const defaults: Partial<AnnouncementEntity>[] = [
@@ -90,16 +90,21 @@ export class AnnouncementService implements OnModuleInit {
         date: '10 Sep',
         time: '6:00 PM',
         location: 'Temple Committee Room',
-        official: false, // Community discussion
+        official: false,
       },
     ];
 
     for (const item of defaults) {
-      await this.announcementRepository.save(this.announcementRepository.create(item));
+      await this.announcementRepository.saveAnnouncement(this.announcementRepository.createAnnouncement(item));
     }
   }
 
+  async deleteAnnouncement(id: number): Promise<void> {
+    await this.announcementRepository.deleteAnnouncement(id);
+  }
+
+  // Alias for backward compatibility
   async delete(id: number): Promise<void> {
-    await this.announcementRepository.delete(id);
+    return this.deleteAnnouncement(id);
   }
 }

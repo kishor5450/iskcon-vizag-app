@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SevaService } from './seva.service';
 import { SevaController } from './seva.controller';
 import { SevaOpportunityEntity } from '../../entities/seva-opportunity.entity';
+import { SevaOpportunityRepository } from '../../entities/repository';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -11,6 +12,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
   ],
   controllers: [SevaController],
-  providers: [SevaService],
+  providers: [SevaOpportunityRepository, SevaService],
+  exports: [SevaService, SevaOpportunityRepository],
 })
 export class SevaModule {}

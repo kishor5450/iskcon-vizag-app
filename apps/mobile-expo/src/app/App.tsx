@@ -3,26 +3,19 @@ import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
-  ScrollView,
-  View,
-  Text,
   StatusBar,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { TRANSLATIONS, IDevotee, SadhanaLogRequestDto, ISadhanaRecord, IAnnouncement, PreferredLanguage, AppTab, DevoteeRole } from '@temple/models';
 import {
-  HomeScreen,
-  SadhanaScreen,
-  UpdatesScreen,
-  JourneyScreen,
-  ProfileScreen,
-  AuthScreen,
-  CommunityScreen,
-  AdminScreen,
-} from './screens';
+  TRANSLATIONS,
+  IDevotee,
+  SadhanaLogRequestDto,
+  ISadhanaRecord,
+  IAnnouncement,
+  PreferredLanguage,
+  AppTab,
+} from '@temple/models';
+import { AuthScreen } from './screens';
+import { AppHeader, BottomTabBar, ScreenRenderer } from './components';
 import { api } from './utils/api';
 
 export const App = () => {
@@ -300,223 +293,73 @@ export const App = () => {
     <>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.bg }]}>
+        <AppHeader
+          colors={colors}
+          isDarkMode={isDarkMode}
+          onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+          lang={lang}
+          onToggleLang={() =>
+            setLang(prev =>
+              prev === PreferredLanguage.ENGLISH
+                ? PreferredLanguage.TELUGU
+                : prev === PreferredLanguage.TELUGU
+                ? PreferredLanguage.HINDI
+                : PreferredLanguage.ENGLISH
+            )
+          }
+          syncing={syncing}
+        />
 
-        {/* TOP BRANDING BAR */}
-        <View style={[styles.headerBar, { borderBottomColor: colors.divider, backgroundColor: colors.bg }]}>
-          <View style={styles.headerLogoContainer}>
-            <Image
-              source={require('../../assets/images/iskcon_vizag_header_logo.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-            <View>
-              <Text style={[styles.headerTitle, { color: colors.textMain }]}>ISKCON VIZAG</Text>
-              <Text style={[styles.headerSubtitle, { color: colors.textSub }]}>My Bhakti. My Temple. My Family.</Text>
-            </View>
-          </View>
+        <ScreenRenderer
+          activeTab={activeTab}
+          onNavigate={setActiveTab}
+          t={t}
+          colors={colors}
+          jwtToken={jwtToken}
+          devotee={devotee}
+          isDarkMode={isDarkMode}
+          setIsDarkMode={setIsDarkMode}
+          lang={lang}
+          setLang={setLang}
+          onLogout={() => {
+            setJwtToken('');
+            setDevotee(null);
+            setActiveTab(AppTab.HOME);
+          }}
+          onUpdateAvatar={url => setDevotee(prev => (prev ? { ...prev, avatarUrl: url } : null))}
+          japaRounds={japaRounds}
+          japaGoal={japaGoal}
+          japaCount={japaCount}
+          handleBeadPress={handleBeadPress}
+          beads={beads}
+          activeBeadIndex={activeBeadIndex}
+          handleJapaRoundChange={handleJapaRoundChange}
+          sadhanaCompletedCount={sadhanaCompletedCount}
+          sadhanaTotalCount={sadhanaTotalCount}
+          sadhanaJapa={sadhanaJapa}
+          sadhanaReading={sadhanaReading}
+          sadhanaArati={sadhanaArati}
+          sadhanaPrayer={sadhanaPrayer}
+          sadhanaLecture={sadhanaLecture}
+          nbsJoined={nbsJoined}
+          handleSadhanaToggle={handleSadhanaToggle}
+          thisMonthRounds={thisMonthRounds}
+          thisWeekRounds={thisWeekRounds}
+          readingProgress={readingProgress}
+          history={history}
+          announcements={announcements}
+          activeUpdateFilter={activeUpdateFilter}
+          setActiveUpdateFilter={setActiveUpdateFilter}
+          radius={radius}
+        />
 
-          <View style={styles.headerControls}>
-            {syncing && <ActivityIndicator size="small" color={colors.accentGold} style={{ marginRight: 8 }} />}
-            <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)} style={styles.iconButton}>
-              <Text style={{ fontSize: 20 }}>{isDarkMode ? '☀️' : '🌙'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setLang(prev => prev === PreferredLanguage.ENGLISH ? PreferredLanguage.TELUGU : prev === PreferredLanguage.TELUGU ? PreferredLanguage.HINDI : PreferredLanguage.ENGLISH)}
-              style={[styles.langToggleBtn, { borderColor: colors.accentGold }]}
-            >
-              <Text style={[styles.langToggleText, { color: colors.accentGold }]}>
-                {lang === PreferredLanguage.ENGLISH ? 'తెలుగు' : lang === PreferredLanguage.TELUGU ? 'हिंदी' : 'English'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* MAIN BODY CONTAINER WITH SCROLL */}
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {activeTab === AppTab.HOME && (
-            <HomeScreen
-              t={t}
-              colors={colors}
-              japaRounds={japaRounds}
-              japaGoal={japaGoal}
-              sadhanaCompletedCount={sadhanaCompletedCount}
-              sadhanaTotalCount={sadhanaTotalCount}
-              sadhanaJapa={sadhanaJapa}
-              sadhanaReading={sadhanaReading}
-              sadhanaArati={sadhanaArati}
-              sadhanaPrayer={sadhanaPrayer}
-              sadhanaLecture={sadhanaLecture}
-              currentStreak={devotee.currentStreak}
-              bestStreak={devotee.bestStreak}
-              thisMonthRounds={thisMonthRounds}
-              onNavigate={setActiveTab}
-              isDarkMode={isDarkMode}
-              userName={devotee.name}
-              history={history}
-              announcements={announcements}
-              readingProgress={readingProgress}
-              nbsJoined={nbsJoined}
-              onToggleNbs={(val) => handleSadhanaToggle('nbs', val)}
-              lang={lang}
-              avatarUrl={devotee.avatarUrl}
-            />
-          )}
-
-          {activeTab === AppTab.SADHANA && (
-            <SadhanaScreen
-              t={t}
-              colors={colors}
-              japaRounds={japaRounds}
-              japaGoal={japaGoal}
-              japaCount={japaCount}
-              handleBeadPress={handleBeadPress}
-              beads={beads}
-              activeBeadIndex={activeBeadIndex}
-              sadhanaJapa={sadhanaJapa}
-              setSadhanaJapa={(val) => handleSadhanaToggle('japa', val)}
-              sadhanaReading={sadhanaReading}
-              setSadhanaReading={(val) => handleSadhanaToggle('reading', val)}
-              sadhanaArati={sadhanaArati}
-              setSadhanaArati={(val) => handleSadhanaToggle('arati', val)}
-              sadhanaPrayer={sadhanaPrayer}
-              setSadhanaPrayer={(val) => handleSadhanaToggle('prayer', val)}
-              sadhanaLecture={sadhanaLecture}
-              setSadhanaLecture={(val) => handleSadhanaToggle('lecture', val)}
-              radius={radius}
-              readingProgress={readingProgress}
-              thisWeekRounds={thisWeekRounds}
-              thisMonthRounds={thisMonthRounds}
-              handleJapaRoundChange={handleJapaRoundChange}
-              nbsJoined={nbsJoined}
-              onToggleNbs={(val) => handleSadhanaToggle('nbs', val)}
-            />
-          )}
-
-          {activeTab === AppTab.UPDATES && (
-            <UpdatesScreen
-              t={t}
-              colors={colors}
-              activeUpdateFilter={activeUpdateFilter}
-              setActiveUpdateFilter={setActiveUpdateFilter}
-              token={jwtToken}
-            />
-          )}
-
-          {activeTab === AppTab.COMMUNITY && (
-            <CommunityScreen
-              t={t}
-              colors={colors}
-              token={jwtToken}
-              onNavigate={setActiveTab}
-            />
-          )}
-
-          {activeTab === AppTab.JOURNEY && (
-            <JourneyScreen
-              t={t}
-              colors={colors}
-              currentStreak={devotee.currentStreak}
-              bestStreak={devotee.bestStreak}
-              thisMonthRounds={thisMonthRounds}
-              onBack={() => setActiveTab(AppTab.HOME)}
-              token={jwtToken}
-            />
-          )}
-
-          {activeTab === AppTab.PROFILE && (
-            <ProfileScreen
-              t={t}
-              colors={colors}
-              lang={lang}
-              setLang={setLang}
-              isDarkMode={isDarkMode}
-              setIsDarkMode={setIsDarkMode}
-              userName={devotee.name}
-              userEmail={devotee.email}
-              userPhone={devotee.phone}
-              totalRoundsChanted={devotee.totalRoundsChanted}
-              currentStreak={devotee.currentStreak}
-              bestStreak={devotee.bestStreak}
-              onLogout={() => {
-                setJwtToken('');
-                setDevotee(null);
-                setActiveTab(AppTab.HOME);
-              }}
-              onNavigate={setActiveTab}
-              avatarUrl={devotee.avatarUrl}
-              onUpdateAvatar={(url) => setDevotee((prev) => (prev ? { ...prev, avatarUrl: url } : null))}
-              token={jwtToken}
-            />
-          )}
-
-          {activeTab === AppTab.ADMIN && (
-            <AdminScreen
-              t={t}
-              colors={colors}
-              token={jwtToken}
-              onBack={() => setActiveTab(AppTab.HOME)}
-            />
-          )}
-        </ScrollView>
-
-        {/* BOTTOM TAB BAR */}
-        <View style={[styles.navTabBar, { backgroundColor: colors.navBg, borderTopColor: colors.divider }]}>
-          <TouchableOpacity onPress={() => setActiveTab(AppTab.HOME)} style={styles.navTabItem}>
-            <View style={styles.tabIconWrapper}>
-              <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.HOME ? 1 : 0.6 }]}>🛕</Text>
-            </View>
-            <Text style={[styles.navTabText, { color: activeTab === AppTab.HOME ? colors.navActive : colors.navInactive }]}>{t.home}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setActiveTab(AppTab.SADHANA)} style={styles.navTabItem}>
-            <View style={styles.tabIconWrapper}>
-              <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.SADHANA ? 1 : 0.6 }]}>📿</Text>
-            </View>
-            <Text style={[styles.navTabText, { color: activeTab === AppTab.SADHANA ? colors.navActive : colors.navInactive }]}>{t.sadhanaTab}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setActiveTab(AppTab.UPDATES)} style={styles.navTabItem}>
-            <View style={styles.tabIconWrapper}>
-              <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.UPDATES ? 1 : 0.6 }]}>🔔</Text>
-            </View>
-            <Text style={[styles.navTabText, { color: activeTab === AppTab.UPDATES ? colors.navActive : colors.navInactive }]}>{t.updatesTab}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setActiveTab(AppTab.COMMUNITY)} style={styles.navTabItem}>
-            <View style={styles.tabIconWrapper}>
-              <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.COMMUNITY ? 1 : 0.6 }]}>🪷</Text>
-            </View>
-            <Text style={[styles.navTabText, { color: activeTab === AppTab.COMMUNITY ? colors.navActive : colors.navInactive }]}>Community</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setActiveTab(AppTab.PROFILE)} style={styles.navTabItem}>
-            <View style={styles.tabIconWrapper}>
-              {devotee?.avatarUrl ? (
-                <Image 
-                  source={{ uri: devotee.avatarUrl }} 
-                  style={[
-                    styles.navTabAvatar, 
-                    { borderColor: activeTab === AppTab.PROFILE ? colors.navActive : 'transparent' }
-                  ]} 
-                />
-              ) : (
-                <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.PROFILE ? 1 : 0.6 }]}>🧘</Text>
-              )}
-            </View>
-            <Text style={[styles.navTabText, { color: activeTab === AppTab.PROFILE ? colors.navActive : colors.navInactive }]}>{t.profileTab}</Text>
-          </TouchableOpacity>
-
-          {devotee?.role === DevoteeRole.ADMIN && (
-            <TouchableOpacity onPress={() => setActiveTab(AppTab.ADMIN)} style={styles.navTabItem}>
-              <View style={styles.tabIconWrapper}>
-                <Text style={[styles.navTabIcon, { fontSize: 20, opacity: activeTab === AppTab.ADMIN ? 1 : 0.6 }]}>⚙️</Text>
-              </View>
-              <Text style={[styles.navTabText, { color: activeTab === AppTab.ADMIN ? colors.navActive : colors.navInactive }]}>Admin</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
+        <BottomTabBar
+          activeTab={activeTab}
+          onNavigate={setActiveTab}
+          colors={colors}
+          t={t}
+          devotee={devotee}
+        />
       </SafeAreaView>
     </>
   );
@@ -525,93 +368,6 @@ export const App = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 90,
-  },
-  headerBar: {
-    height: 88,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-  },
-  headerLogoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logoImage: {
-    width: 70,
-    height: 70,
-    marginRight: 12,
-    resizeMode: 'contain',
-  },
-  avatarText: {
-    color: '#160826',
-    fontWeight: 'bold',
-    fontSize: 20,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  headerSubtitle: {
-    fontSize: 11,
-  },
-  headerControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    padding: 8,
-    marginRight: 5,
-  },
-  langToggleBtn: {
-    paddingVertical: 5,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderRadius: 15,
-  },
-  langToggleText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  navTabBar: {
-    height: 75,
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingBottom: 15,
-  },
-  navTabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navTabIcon: {
-    fontSize: 22,
-  },
-  navTabText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    marginTop: 2,
-  },
-  navTabAvatar: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-  },
-  tabIconWrapper: {
-    height: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 2,
   },
 });
 

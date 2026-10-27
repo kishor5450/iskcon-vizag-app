@@ -1,16 +1,21 @@
 import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
-import { DevoteeEntity } from '../../entities/devotee.entity';
-import { IDevotee, LoginResponseDto, RegisterRequestDto, PreferredLanguage, DevoteeRole } from '@temple/models';
+import { DevoteeRepository } from '../../entities/repository';
+import {
+  IDevotee,
+  LoginResponseDto,
+  RegisterRequestDto,
+  LoginRequestDto,
+  UpdatePreferencesRequestDto,
+  PreferredLanguage,
+  DevoteeRole,
+} from '@temple/models';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(DevoteeEntity)
-    private readonly devoteeRepository: Repository<DevoteeEntity>,
+    private readonly devoteeRepository: DevoteeRepository,
     private readonly jwtService: JwtService
   ) {}
 
@@ -19,12 +24,12 @@ export class AuthService {
   }
 
   async register(dto: RegisterRequestDto): Promise<IDevotee> {
-    const existing = await this.devoteeRepository.findOne({ where: { email: dto.email } });
+    const existing = await this.devoteeRepository.findByEmail(dto.email);
     if (existing) {
       throw new ConflictException('Email already registered');
     }
 
-    const devotee = this.devoteeRepository.create({
+    const devotee = this.devoteeRepository.createDevotee({
       name: dto.name,
       email: dto.email,
       password: this.hashPassword(dto.passwordPlain || ''),
@@ -37,14 +42,20 @@ export class AuthService {
       role: dto.email.toLowerCase().includes('admin') ? DevoteeRole.ADMIN : DevoteeRole.DEVOTEE,
     });
 
-    const saved = await this.devoteeRepository.save(devotee);
+    const saved = await this.devoteeRepository.saveDevotee(devotee);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = saved;
     return result as IDevotee;
   }
 
-  async login(email: string, passwordPlain: string): Promise<LoginResponseDto> {
-    const devotee = await this.devoteeRepository.findOne({ where: { email } });
+  async login(
+    emailOrDto: string | LoginRequestDto | { email: string; passwordPlain: string },
+    maybePassword?: string
+  ): Promise<LoginResponseDto> {
+    const email = typeof emailOrDto === 'string' ? emailOrDto : emailOrDto.email;
+    const passwordPlain = typeof emailOrDto === 'string' ? maybePassword || '' : emailOrDto.passwordPlain;
+
+    const devotee = await this.devoteeRepository.findByEmail(email);
     if (!devotee) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -65,7 +76,7 @@ export class AuthService {
   }
 
   async getDevoteeById(id: number): Promise<IDevotee> {
-    const devotee = await this.devoteeRepository.findOne({ where: { id } });
+    const devotee = await this.devoteeRepository.findById(id);
     if (!devotee) {
       throw new UnauthorizedException('Devotee not found');
     }
@@ -74,19 +85,23 @@ export class AuthService {
     return result as IDevotee;
   }
 
-  async updatePreferences(id: number, lang: PreferredLanguage, japaGoal: number): Promise<IDevotee> {
-    await this.devoteeRepository.update(id, { preferredLanguage: lang, japaGoal });
+  async updatePreferences(
+    id: number,
+    langOrDto: PreferredLanguage | UpdatePreferencesRequestDto,
+    maybeJapaGoal?: number
+  ): Promise<IDevotee> {
+    const lang = typeof langOrDto === 'object' ? langOrDto.preferredLanguage : langOrDto;
+    const japaGoal = typeof langOrDto === 'object' ? langOrDto.japaGoal : (maybeJapaGoal ?? 16);
+    await this.devoteeRepository.updatePreferences(id, lang, japaGoal);
     return this.getDevoteeById(id);
   }
 
   async getAllDevotees(): Promise<IDevotee[]> {
-    const list = await this.devoteeRepository.find({
-      relations: { sadhanaRecords: true },
-      order: { totalRoundsChanted: 'DESC' }
-    });
+    const list = await this.devoteeRepository.getAllDevoteesWithRecords();
     return list.map(({ password, ...result }) => {
       const sortedRecords = result.sadhanaRecords?.sort((a, b) => b.date.localeCompare(a.date)) || [];
       const latestRecord = sortedRecords[0] || null;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { sadhanaRecords, ...devoteeData } = result;
       return {
         ...devoteeData,
@@ -95,8 +110,9 @@ export class AuthService {
     });
   }
 
-  async updateAvatar(id: number, avatarUrl: string): Promise<IDevotee> {
-    await this.devoteeRepository.update(id, { avatarUrl });
+  async updateAvatar(id: number, avatarOrObj: string | { avatarUrl: string }): Promise<IDevotee> {
+    const avatarUrl = typeof avatarOrObj === 'object' ? avatarOrObj.avatarUrl : avatarOrObj;
+    await this.devoteeRepository.updateAvatar(id, avatarUrl);
     return this.getDevoteeById(id);
   }
 }

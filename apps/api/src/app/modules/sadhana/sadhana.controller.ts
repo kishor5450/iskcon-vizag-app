@@ -8,29 +8,54 @@ import { AuthGuard } from '../auth/auth.guard';
 export class SadhanaController {
   constructor(private readonly sadhanaService: SadhanaService) {}
 
+  @Post('/getHistory')
+  @Post('history')
   @Get('history')
-  async getHistory(@Request() req): Promise<ISadhanaRecord[]> {
-    return this.sadhanaService.getHistory(req.user.sub);
+  async getSadhanaHistory(@Request() req: any): Promise<ISadhanaRecord[]> {
+    try {
+      return await this.sadhanaService.getSadhanaHistory(req.user.sub);
+    } catch (error) {
+      throw error;
+    }
   }
 
+  @Post('/getTodayRecord')
+  @Post('today')
   @Get('today')
-  async getTodayRecord(
-    @Request() req,
-    @Query('date') date: string
+  async getTodaySadhanaRecord(
+    @Request() req: any,
+    @Query('date') queryDate?: string,
+    @Body('date') bodyDate?: string
   ): Promise<ISadhanaRecord | null> {
-    return this.sadhanaService.getRecordForDate(req.user.sub, date);
+    try {
+      const date = bodyDate || queryDate || '';
+      return await this.sadhanaService.getSadhanaRecordForDate(req.user.sub, date);
+    } catch (error) {
+      throw error;
+    }
   }
 
+  @Post('/getCommunityStats')
+  @Post('community-stats')
   @Get('community-stats')
-  async getCommunityStats() {
-    return this.sadhanaService.getCommunityStats();
+  async getCommunitySadhanaStats() {
+    try {
+      return await this.sadhanaService.getCommunitySadhanaStats();
+    } catch (error) {
+      throw error;
+    }
   }
 
+  @Post('/logSadhana')
   @Post('log')
-  async logSadhana(
-    @Request() req,
+  async logSadhanaRecord(
+    @Request() req: any,
     @Body() recordDto: SadhanaLogRequestDto
   ): Promise<ISadhanaRecord> {
-    return this.sadhanaService.submitRecord(req.user.sub, recordDto);
+    try {
+      return await this.sadhanaService.submitSadhanaRecord(req.user.sub, recordDto);
+    } catch (error) {
+      throw error;
+    }
   }
 }

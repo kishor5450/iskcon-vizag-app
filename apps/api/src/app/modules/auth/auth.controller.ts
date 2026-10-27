@@ -7,43 +7,77 @@ import { AuthGuard } from './auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Post('/register')
   @Post('register')
-  async register(@Body() devoteeDto: RegisterRequestDto): Promise<IDevotee> {
-    return this.authService.register(devoteeDto);
+  async register(@Body() req: RegisterRequestDto): Promise<IDevotee> {
+    try {
+      return await this.authService.register(req);
+    } catch (error) {
+      throw error;
+    }
   }
 
+  @Post('/login')
   @Post('login')
-  async login(@Body() body: LoginRequestDto): Promise<LoginResponseDto> {
-    return this.authService.login(body.email, body.passwordPlain);
+  async login(@Body() req: LoginRequestDto): Promise<LoginResponseDto> {
+    try {
+      return await this.authService.login(req);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @UseGuards(AuthGuard)
+  @Post('/getProfile')
+  @Post('profile')
   @Get('profile')
-  async getProfile(@Request() req): Promise<IDevotee> {
-    return this.authService.getDevoteeById(req.user.sub);
+  async getProfile(@Request() req: any): Promise<IDevotee> {
+    try {
+      return await this.authService.getDevoteeById(req.user.sub);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @UseGuards(AuthGuard)
+  @Post('/updatePreferences')
+  @Post('preferences')
   @Put('preferences')
   async updatePreferences(
-    @Request() req,
+    @Request() req: any,
     @Body() body: UpdatePreferencesRequestDto
   ): Promise<IDevotee> {
-    return this.authService.updatePreferences(req.user.sub, body.preferredLanguage, body.japaGoal);
+    try {
+      return await this.authService.updatePreferences(req.user.sub, body);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @UseGuards(AuthGuard)
+  @Post('/getAllDevotees')
+  @Post('devotees')
   @Get('devotees')
   async getAllDevotees(): Promise<IDevotee[]> {
-    return this.authService.getAllDevotees();
+    try {
+      return await this.authService.getAllDevotees();
+    } catch (error) {
+      throw error;
+    }
   }
 
   @UseGuards(AuthGuard)
+  @Post('/updateAvatar')
+  @Post('avatar')
   @Put('avatar')
   async updateAvatar(
-    @Request() req,
+    @Request() req: any,
     @Body() body: { avatarUrl: string }
   ): Promise<IDevotee> {
-    return this.authService.updateAvatar(req.user.sub, body.avatarUrl);
+    try {
+      return await this.authService.updateAvatar(req.user.sub, body);
+    } catch (error) {
+      throw error;
+    }
   }
 }

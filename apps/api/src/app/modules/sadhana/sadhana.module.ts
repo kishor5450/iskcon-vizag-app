@@ -4,6 +4,7 @@ import { SadhanaService } from './sadhana.service';
 import { SadhanaController } from './sadhana.controller';
 import { SadhanaRecordEntity } from '../../entities/sadhana-record.entity';
 import { DevoteeEntity } from '../../entities/devotee.entity';
+import { SadhanaRecordRepository, DevoteeRepository } from '../../entities/repository';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
   ],
   controllers: [SadhanaController],
-  providers: [SadhanaService],
+  providers: [SadhanaRecordRepository, DevoteeRepository, SadhanaService],
+  exports: [SadhanaService, SadhanaRecordRepository],
 })
 export class SadhanaModule {}

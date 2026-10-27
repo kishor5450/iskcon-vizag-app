@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { DevoteeEntity } from '../../entities/devotee.entity';
+import { DevoteeRepository } from '../../entities/repository';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { DevoteeEntity } from '../../entities/devotee.entity';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports: [AuthService, JwtModule],
+  providers: [DevoteeRepository, AuthService],
+  exports: [AuthService, DevoteeRepository, JwtModule],
 })
 export class AuthModule {}

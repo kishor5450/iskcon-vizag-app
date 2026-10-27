@@ -11,24 +11,45 @@ import { extname } from 'path';
 export class AnnouncementController {
   constructor(private readonly announcementService: AnnouncementService) {}
 
+  @Post('/getAll')
+  @Post('list')
   @Get()
-  async getAll(
-    @Query('official') official?: string
+  async getAllAnnouncements(
+    @Query('official') queryOfficial?: string,
+    @Body('official') bodyOfficial?: any
   ): Promise<IAnnouncement[]> {
-    const isOfficial = official === undefined ? undefined : official === 'true';
-    return this.announcementService.getAll(isOfficial);
+    try {
+      const raw = bodyOfficial !== undefined ? bodyOfficial : queryOfficial;
+      const isOfficial = raw === undefined ? undefined : String(raw) === 'true';
+      return await this.announcementService.getAllAnnouncements(isOfficial);
+    } catch (error) {
+      throw error;
+    }
   }
 
+  @Post('/create')
   @Post()
-  async create(@Body() dto: CreateAnnouncementRequestDto): Promise<IAnnouncement> {
-    return this.announcementService.create(dto);
+  async createAnnouncement(@Body() dto: CreateAnnouncementRequestDto): Promise<IAnnouncement> {
+    try {
+      return await this.announcementService.createAnnouncement(dto);
+    } catch (error) {
+      throw error;
+    }
   }
 
+  @Post('/delete')
+  @Post(':id/delete')
   @Delete(':id')
-  async delete(@Param('id') id: string): Promise<void> {
-    return this.announcementService.delete(Number(id));
+  async deleteAnnouncement(@Param('id') id?: string, @Body('id') bodyId?: number): Promise<void> {
+    try {
+      const targetId = id ? Number(id) : Number(bodyId);
+      return await this.announcementService.deleteAnnouncement(targetId);
+    } catch (error) {
+      throw error;
+    }
   }
 
+  @Post('/upload')
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -51,4 +72,3 @@ export class AnnouncementController {
     return { url: fileUrl };
   }
 }
-
