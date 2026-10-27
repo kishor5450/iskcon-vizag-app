@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { DevoteeRepository } from '../../entities/repository';
@@ -16,14 +20,14 @@ import {
 export class AuthService {
   constructor(
     private readonly devoteeRepository: DevoteeRepository,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
   ) {}
 
   private hashPassword(password: string): string {
     return crypto.createHash('sha256').update(password).digest('hex');
   }
 
-  async register(dto: RegisterRequestDto): Promise<IDevotee> {
+  async registerDevotee(dto: RegisterRequestDto): Promise<IDevotee> {
     const existing = await this.devoteeRepository.findByEmail(dto.email);
     if (existing) {
       throw new ConflictException('Email already registered');
@@ -39,7 +43,9 @@ export class AuthService {
       bestStreak: 0,
       totalRoundsChanted: 0,
       preferredLanguage: dto.preferredLanguage || PreferredLanguage.ENGLISH,
-      role: dto.email.toLowerCase().includes('admin') ? DevoteeRole.ADMIN : DevoteeRole.DEVOTEE,
+      role: dto.email.toLowerCase().includes('admin')
+        ? DevoteeRole.ADMIN
+        : DevoteeRole.DEVOTEE,
     });
 
     const saved = await this.devoteeRepository.saveDevotee(devotee);
@@ -48,12 +54,19 @@ export class AuthService {
     return result as IDevotee;
   }
 
-  async login(
-    emailOrDto: string | LoginRequestDto | { email: string; passwordPlain: string },
-    maybePassword?: string
+  async loginDevotee(
+    emailOrDto:
+      | string
+      | LoginRequestDto
+      | { email: string; passwordPlain: string },
+    maybePassword?: string,
   ): Promise<LoginResponseDto> {
-    const email = typeof emailOrDto === 'string' ? emailOrDto : emailOrDto.email;
-    const passwordPlain = typeof emailOrDto === 'string' ? maybePassword || '' : emailOrDto.passwordPlain;
+    const email =
+      typeof emailOrDto === 'string' ? emailOrDto : emailOrDto.email;
+    const passwordPlain =
+      typeof emailOrDto === 'string'
+        ? maybePassword || ''
+        : emailOrDto.passwordPlain;
 
     const devotee = await this.devoteeRepository.findByEmail(email);
     if (!devotee) {
@@ -65,7 +78,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const token = this.jwtService.sign({ sub: devotee.id, email: devotee.email, role: devotee.role });
+    const token = this.jwtService.sign({
+      sub: devotee.id,
+      email: devotee.email,
+      role: devotee.role,
+    });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...devoteeData } = devotee;
 
@@ -75,7 +92,7 @@ export class AuthService {
     };
   }
 
-  async getDevoteeById(id: number): Promise<IDevotee> {
+  async getDevoteeProfile(id: number): Promise<IDevotee> {
     const devotee = await this.devoteeRepository.findById(id);
     if (!devotee) {
       throw new UnauthorizedException('Devotee not found');
@@ -85,21 +102,27 @@ export class AuthService {
     return result as IDevotee;
   }
 
-  async updatePreferences(
+  async updateDevoteePreferences(
     id: number,
     langOrDto: PreferredLanguage | UpdatePreferencesRequestDto,
-    maybeJapaGoal?: number
+    maybeJapaGoal?: number,
   ): Promise<IDevotee> {
-    const lang = typeof langOrDto === 'object' ? langOrDto.preferredLanguage : langOrDto;
-    const japaGoal = typeof langOrDto === 'object' ? langOrDto.japaGoal : (maybeJapaGoal ?? 16);
+    const lang =
+      typeof langOrDto === 'object' ? langOrDto.preferredLanguage : langOrDto;
+    const japaGoal =
+      typeof langOrDto === 'object'
+        ? langOrDto.japaGoal
+        : (maybeJapaGoal ?? 16);
     await this.devoteeRepository.updatePreferences(id, lang, japaGoal);
-    return this.getDevoteeById(id);
+    return this.getDevoteeProfile(id);
   }
 
   async getAllDevotees(): Promise<IDevotee[]> {
     const list = await this.devoteeRepository.getAllDevoteesWithRecords();
     return list.map(({ password, ...result }) => {
-      const sortedRecords = result.sadhanaRecords?.sort((a, b) => b.date.localeCompare(a.date)) || [];
+      const sortedRecords =
+        result.sadhanaRecords?.sort((a, b) => b.date.localeCompare(a.date)) ||
+        [];
       const latestRecord = sortedRecords[0] || null;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { sadhanaRecords, ...devoteeData } = result;
@@ -110,9 +133,13 @@ export class AuthService {
     });
   }
 
-  async updateAvatar(id: number, avatarOrObj: string | { avatarUrl: string }): Promise<IDevotee> {
-    const avatarUrl = typeof avatarOrObj === 'object' ? avatarOrObj.avatarUrl : avatarOrObj;
+  async updateDevoteeAvatar(
+    id: number,
+    avatarOrObj: string | { avatarUrl: string },
+  ): Promise<IDevotee> {
+    const avatarUrl =
+      typeof avatarOrObj === 'object' ? avatarOrObj.avatarUrl : avatarOrObj;
     await this.devoteeRepository.updateAvatar(id, avatarUrl);
-    return this.getDevoteeById(id);
+    return this.getDevoteeProfile(id);
   }
 }

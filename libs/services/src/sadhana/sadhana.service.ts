@@ -10,23 +10,53 @@ export interface CommunityStats {
 }
 
 export class SadhanaService extends CommonAxiosService {
-  private getURLwithMainEndPoint(childUrl: string) {
+  private getURLwithMainEndPoint(childUrl: string): string {
     return '/sadhana/' + childUrl;
   }
 
-  async getHistory(config?: AxiosRequestConfig): Promise<ISadhanaRecord[]> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('getHistory'), {}, config);
+  async getSadhanaHistory(
+    reqModel?: Record<string, any>,
+    config?: AxiosRequestConfig,
+  ): Promise<ISadhanaRecord[]> {
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('getSadhanaHistory'),
+      reqModel || {},
+      config,
+    );
   }
 
-  async getTodaySadhana(date: string, config?: AxiosRequestConfig): Promise<ISadhanaRecord | null> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('getTodayRecord'), { date }, config);
+  async getTodaySadhanaRecord(
+    reqModel: { date: string } | string,
+    config?: AxiosRequestConfig,
+  ): Promise<ISadhanaRecord | null> {
+    const payload =
+      typeof reqModel === 'string' ? { date: reqModel } : reqModel;
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('getTodaySadhanaRecord'),
+      payload,
+      config,
+    );
   }
 
-  async getCommunityStats(config?: AxiosRequestConfig): Promise<CommunityStats> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('getCommunityStats'), {}, config);
+  async getCommunitySadhanaStats(
+    reqModel?: Record<string, any>,
+    config?: AxiosRequestConfig,
+  ): Promise<CommunityStats> {
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('getCommunitySadhanaStats'),
+      reqModel || {},
+      config,
+    );
   }
 
-  async logSadhana(reqModel: SadhanaLogRequestDto, config?: AxiosRequestConfig): Promise<ISadhanaRecord> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('logSadhana'), reqModel, config);
+  async logSadhanaRecord(
+    reqModel: SadhanaLogRequestDto,
+    config?: AxiosRequestConfig,
+  ): Promise<ISadhanaRecord> {
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('logSadhanaRecord'),
+      reqModel,
+      config,
+    );
   }
 }

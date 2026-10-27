@@ -1,5 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { SadhanaRecordRepository, DevoteeRepository } from '../../entities/repository';
+import {
+  SadhanaRecordRepository,
+  DevoteeRepository,
+} from '../../entities/repository';
 import { DevoteeEntity } from '../../entities/devotee.entity';
 import { ISadhanaRecord, SadhanaLogRequestDto } from '@temple/models';
 
@@ -7,28 +10,24 @@ import { ISadhanaRecord, SadhanaLogRequestDto } from '@temple/models';
 export class SadhanaService {
   constructor(
     private readonly recordRepository: SadhanaRecordRepository,
-    private readonly devoteeRepository: DevoteeRepository
+    private readonly devoteeRepository: DevoteeRepository,
   ) {}
 
   async getSadhanaHistory(devoteeId: number): Promise<ISadhanaRecord[]> {
     return this.recordRepository.getHistoryByDevoteeId(devoteeId);
   }
 
-  // Alias for backward compatibility
-  async getHistory(devoteeId: number): Promise<ISadhanaRecord[]> {
-    return this.getSadhanaHistory(devoteeId);
-  }
-
-  async getSadhanaRecordForDate(devoteeId: number, date: string): Promise<ISadhanaRecord | null> {
+  async getSadhanaRecordForDate(
+    devoteeId: number,
+    date: string,
+  ): Promise<ISadhanaRecord | null> {
     return this.recordRepository.getRecordForDate(devoteeId, date);
   }
 
-  // Alias for backward compatibility
-  async getRecordForDate(devoteeId: number, date: string): Promise<ISadhanaRecord | null> {
-    return this.getSadhanaRecordForDate(devoteeId, date);
-  }
-
-  async submitSadhanaRecord(devoteeId: number, dto: SadhanaLogRequestDto): Promise<ISadhanaRecord> {
+  async submitSadhanaRecord(
+    devoteeId: number,
+    dto: SadhanaLogRequestDto,
+  ): Promise<ISadhanaRecord> {
     if (!dto.date) {
       throw new BadRequestException('Date is required');
     }
@@ -39,7 +38,10 @@ export class SadhanaService {
     }
 
     // Check if a record already exists for this date
-    let record = await this.recordRepository.getRecordForDate(devoteeId, dto.date);
+    let record = await this.recordRepository.getRecordForDate(
+      devoteeId,
+      dto.date,
+    );
 
     const oldRounds = record ? record.japaRoundsCount : 0;
     const newRounds = dto.japaRoundsCount ?? 0;
@@ -82,16 +84,17 @@ export class SadhanaService {
     return savedRecord;
   }
 
-  // Alias for backward compatibility
-  async submitRecord(devoteeId: number, dto: SadhanaLogRequestDto): Promise<ISadhanaRecord> {
-    return this.submitSadhanaRecord(devoteeId, dto);
-  }
-
-  private async updateDevoteeStreaks(devotee: DevoteeEntity, logDateStr: string): Promise<void> {
+  private async updateDevoteeStreaks(
+    devotee: DevoteeEntity,
+    logDateStr: string,
+  ): Promise<void> {
     const logDate = new Date(logDateStr);
-    
+
     // Find last logged day before logDateStr using custom repository method
-    const previousLog = await this.recordRepository.getPreviousLogBeforeDate(devotee.id, logDateStr);
+    const previousLog = await this.recordRepository.getPreviousLogBeforeDate(
+      devotee.id,
+      logDateStr,
+    );
 
     if (!previousLog) {
       // This is their very first log
@@ -99,7 +102,7 @@ export class SadhanaService {
     } else {
       const lastLogDateStr = previousLog.date;
       const lastLogDate = new Date(lastLogDateStr);
-      
+
       const diffTime = Math.abs(logDate.getTime() - lastLogDate.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -121,10 +124,5 @@ export class SadhanaService {
 
   async getCommunitySadhanaStats() {
     return this.recordRepository.getCommunityStats();
-  }
-
-  // Alias for backward compatibility
-  async getCommunityStats() {
-    return this.getCommunitySadhanaStats();
   }
 }

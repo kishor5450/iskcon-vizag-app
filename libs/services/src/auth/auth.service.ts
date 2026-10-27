@@ -9,19 +9,29 @@ import { AxiosRequestConfig } from 'axios';
 import { CommonAxiosService } from '../core';
 
 export class AuthService extends CommonAxiosService {
-  private getURLwithMainEndPoint(childUrl: string) {
+  private getURLwithMainEndPoint(childUrl: string): string {
     return '/auth/' + childUrl;
   }
 
-  async register(reqModel: RegisterRequestDto, config?: AxiosRequestConfig): Promise<IDevotee> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('register'), reqModel, config);
+  async registerDevotee(
+    reqModel: RegisterRequestDto,
+    config?: AxiosRequestConfig,
+  ): Promise<IDevotee> {
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('registerDevotee'),
+      reqModel,
+      config,
+    );
   }
 
-  async login(reqModel: LoginRequestDto, config?: AxiosRequestConfig): Promise<LoginResponseDto> {
+  async loginDevotee(
+    reqModel: LoginRequestDto,
+    config?: AxiosRequestConfig,
+  ): Promise<LoginResponseDto> {
     const res = await this.axiosPostCall<LoginResponseDto>(
-      this.getURLwithMainEndPoint('login'),
+      this.getURLwithMainEndPoint('loginDevotee'),
       reqModel,
-      config
+      config,
     );
     if (res?.token) {
       this.setToken(res.token);
@@ -29,22 +39,49 @@ export class AuthService extends CommonAxiosService {
     return res;
   }
 
-  async getProfile(config?: AxiosRequestConfig): Promise<IDevotee> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('getProfile'), {}, config);
-  }
-
-  async updatePreferences(
-    reqModel: UpdatePreferencesRequestDto,
-    config?: AxiosRequestConfig
+  async getDevoteeProfile(
+    reqModel?: Record<string, any>,
+    config?: AxiosRequestConfig,
   ): Promise<IDevotee> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('updatePreferences'), reqModel, config);
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('getDevoteeProfile'),
+      reqModel || {},
+      config,
+    );
   }
 
-  async getAllDevotees(config?: AxiosRequestConfig): Promise<IDevotee[]> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('getAllDevotees'), {}, config);
+  async updateDevoteePreferences(
+    reqModel: UpdatePreferencesRequestDto,
+    config?: AxiosRequestConfig,
+  ): Promise<IDevotee> {
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('updateDevoteePreferences'),
+      reqModel,
+      config,
+    );
   }
 
-  async updateAvatar(avatarUrl: string, config?: AxiosRequestConfig): Promise<IDevotee> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('updateAvatar'), { avatarUrl }, config);
+  async getAllDevotees(
+    reqModel?: Record<string, any>,
+    config?: AxiosRequestConfig,
+  ): Promise<IDevotee[]> {
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('getAllDevotees'),
+      reqModel || {},
+      config,
+    );
+  }
+
+  async updateDevoteeAvatar(
+    reqModel: { avatarUrl: string } | string,
+    config?: AxiosRequestConfig,
+  ): Promise<IDevotee> {
+    const payload =
+      typeof reqModel === 'string' ? { avatarUrl: reqModel } : reqModel;
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('updateDevoteeAvatar'),
+      payload,
+      config,
+    );
   }
 }

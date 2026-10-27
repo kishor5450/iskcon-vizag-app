@@ -22,7 +22,7 @@ export class CommonAxiosService {
   axiosPostCall = async <T = any>(
     urlEndPoint: string,
     data?: any,
-    config?: AxiosRequestConfig
+    config?: AxiosRequestConfig,
   ): Promise<T> => {
     console.log('API URL:', this.URL + '' + urlEndPoint);
     return await AxiosInstance.post(this.URL + '' + urlEndPoint, data, config)
@@ -34,12 +34,11 @@ export class CommonAxiosService {
         }
       })
       .catch((err) => {
-        const message =
-          err.response?.data?.message
-            ? Array.isArray(err.response.data.message)
-              ? err.response.data.message.join(', ')
-              : err.response.data.message
-            : err.message;
+        const message = err.response?.data?.message
+          ? Array.isArray(err.response.data.message)
+            ? err.response.data.message.join(', ')
+            : err.response.data.message
+          : err.message;
         throw new Error(`Error: ${message}, URL: ${this.URL}`);
       });
   };

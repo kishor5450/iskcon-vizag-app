@@ -1,36 +1,50 @@
-import { ISevaOpportunity, CreateSevaRequestDto } from '@temple/models';
+import {
+  CreateSevaRequestDto,
+  RegisterForSevaByIdRequest,
+  GetAllSevasRequest,
+  GetAllSevasResponse,
+  CreateSevaResponse,
+  RegisterForSevaResponse,
+} from '@temple/models';
 import { AxiosRequestConfig } from 'axios';
 import { CommonAxiosService } from '../core';
 
 export class SevaService extends CommonAxiosService {
-  private getURLwithMainEndPoint(childUrl: string) {
+  private getURLwithMainEndPoint(childUrl: string): string {
     return '/sevas/' + childUrl;
   }
 
-  async getAll(config?: AxiosRequestConfig): Promise<ISevaOpportunity[]> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('getAll'), {}, config);
+  async getAllSevas(
+    reqModel: GetAllSevasRequest = {},
+    config?: AxiosRequestConfig,
+  ): Promise<GetAllSevasResponse> {
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('getAllSevas'),
+      reqModel,
+      config,
+    );
   }
 
-  // Alias for backward compatibility
-  async getSevas(config?: AxiosRequestConfig): Promise<ISevaOpportunity[]> {
-    return this.getAll(config);
+  async createSeva(
+    reqModel: CreateSevaRequestDto,
+    config?: AxiosRequestConfig,
+  ): Promise<CreateSevaResponse> {
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('createSeva'),
+      reqModel,
+      config,
+    );
   }
 
-  async create(reqModel: CreateSevaRequestDto, config?: AxiosRequestConfig): Promise<ISevaOpportunity> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('create'), reqModel, config);
-  }
-
-  // Alias for backward compatibility
-  async createSeva(reqModel: CreateSevaRequestDto, config?: AxiosRequestConfig): Promise<ISevaOpportunity> {
-    return this.create(reqModel, config);
-  }
-
-  async register(id: number, config?: AxiosRequestConfig): Promise<ISevaOpportunity> {
-    return await this.axiosPostCall(this.getURLwithMainEndPoint('register'), { id }, config);
-  }
-
-  // Alias for backward compatibility
-  async registerForSeva(id: number, config?: AxiosRequestConfig): Promise<ISevaOpportunity> {
-    return this.register(id, config);
+  async registerForSevaById(
+    reqModel: RegisterForSevaByIdRequest | { id: number } | number,
+    config?: AxiosRequestConfig,
+  ): Promise<RegisterForSevaResponse> {
+    const payload = typeof reqModel === 'number' ? { id: reqModel } : reqModel;
+    return await this.axiosPostCall(
+      this.getURLwithMainEndPoint('registerForSevaById'),
+      payload,
+      config,
+    );
   }
 }

@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, UseGuards, Request, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Query,
+} from '@nestjs/common';
 import { SadhanaService } from './sadhana.service';
 import { ISadhanaRecord, SadhanaLogRequestDto } from '@temple/models';
 import { AuthGuard } from '../auth/auth.guard';
@@ -8,6 +16,7 @@ import { AuthGuard } from '../auth/auth.guard';
 export class SadhanaController {
   constructor(private readonly sadhanaService: SadhanaService) {}
 
+  @Post('/getSadhanaHistory')
   @Post('/getHistory')
   @Post('history')
   @Get('history')
@@ -19,22 +28,27 @@ export class SadhanaController {
     }
   }
 
+  @Post('/getTodaySadhanaRecord')
   @Post('/getTodayRecord')
   @Post('today')
   @Get('today')
   async getTodaySadhanaRecord(
     @Request() req: any,
     @Query('date') queryDate?: string,
-    @Body('date') bodyDate?: string
+    @Body('date') bodyDate?: string,
   ): Promise<ISadhanaRecord | null> {
     try {
       const date = bodyDate || queryDate || '';
-      return await this.sadhanaService.getSadhanaRecordForDate(req.user.sub, date);
+      return await this.sadhanaService.getSadhanaRecordForDate(
+        req.user.sub,
+        date,
+      );
     } catch (error) {
       throw error;
     }
   }
 
+  @Post('/getCommunitySadhanaStats')
   @Post('/getCommunityStats')
   @Post('community-stats')
   @Get('community-stats')
@@ -46,14 +60,18 @@ export class SadhanaController {
     }
   }
 
+  @Post('/logSadhanaRecord')
   @Post('/logSadhana')
   @Post('log')
   async logSadhanaRecord(
     @Request() req: any,
-    @Body() recordDto: SadhanaLogRequestDto
+    @Body() recordDto: SadhanaLogRequestDto,
   ): Promise<ISadhanaRecord> {
     try {
-      return await this.sadhanaService.submitSadhanaRecord(req.user.sub, recordDto);
+      return await this.sadhanaService.submitSadhanaRecord(
+        req.user.sub,
+        recordDto,
+      );
     } catch (error) {
       throw error;
     }

@@ -1,51 +1,96 @@
-import { Controller, Get, Post, Delete, Body, Query, Param, UseGuards, Request, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Query,
+  Param,
+  UseGuards,
+  Request,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { AnnouncementService } from './announcement.service';
-import { IAnnouncement, CreateAnnouncementRequestDto } from '@temple/models';
+import {
+  IAnnouncement,
+  CreateAnnouncementRequestDto,
+  GlobalResponseObject,
+  DeleteAnnouncementByIdRequest,
+  GetAllAnnouncementsRequest,
+  GetAllAnnouncementsResponse,
+  CreateAnnouncementResponse,
+  DeleteAnnouncementResponse,
+} from '@temple/models';
 import { AuthGuard } from '../auth/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { returnException } from '../../core/backend-utils';
 
 @Controller('announcements')
 @UseGuards(AuthGuard)
 export class AnnouncementController {
   constructor(private readonly announcementService: AnnouncementService) {}
 
+  @Post('/getAllAnnouncements')
   @Post('/getAll')
   @Post('list')
-  @Get()
   async getAllAnnouncements(
-    @Query('official') queryOfficial?: string,
-    @Body('official') bodyOfficial?: any
-  ): Promise<IAnnouncement[]> {
+    @Body() req: GetAllAnnouncementsRequest,
+  ): Promise<GetAllAnnouncementsResponse> {
     try {
-      const raw = bodyOfficial !== undefined ? bodyOfficial : queryOfficial;
-      const isOfficial = raw === undefined ? undefined : String(raw) === 'true';
-      return await this.announcementService.getAllAnnouncements(isOfficial);
+      return await this.announcementService.getAllAnnouncements(req);
     } catch (error) {
-      throw error;
+      return returnException(GetAllAnnouncementsResponse, error);
     }
   }
 
+  // Legacy GET for mobile app compatibility
+  @Get()
+  async getAllAnnouncementsLegacy(
+    @Query('official') queryOfficial?: string,
+  ): Promise<IAnnouncement[]> {
+    const isOfficial =
+      queryOfficial === undefined
+        ? undefined
+        : String(queryOfficial) === 'true';
+    const res = await this.announcementService.getAllAnnouncements({
+      official: isOfficial,
+    });
+    return res.data || [];
+  }
+
+  @Post('/createAnnouncement')
   @Post('/create')
   @Post()
-  async createAnnouncement(@Body() dto: CreateAnnouncementRequestDto): Promise<IAnnouncement> {
+  async createAnnouncement(
+    @Body() req: CreateAnnouncementRequestDto,
+  ): Promise<CreateAnnouncementResponse> {
     try {
-      return await this.announcementService.createAnnouncement(dto);
+      return await this.announcementService.createAnnouncement(req);
     } catch (error) {
-      throw error;
+      return returnException(CreateAnnouncementResponse, error);
     }
   }
 
+  @Post('/deleteAnnouncementById')
+  @Post('/deleteAnnouncement')
   @Post('/delete')
   @Post(':id/delete')
   @Delete(':id')
-  async deleteAnnouncement(@Param('id') id?: string, @Body('id') bodyId?: number): Promise<void> {
+  async deleteAnnouncementById(
+    @Param('id') id?: string,
+    @Body() req?: DeleteAnnouncementByIdRequest | { id?: number },
+  ): Promise<DeleteAnnouncementResponse> {
     try {
-      const targetId = id ? Number(id) : Number(bodyId);
-      return await this.announcementService.deleteAnnouncement(targetId);
+      const targetId = id ? Number(id) : Number(req?.id);
+      return await this.announcementService.deleteAnnouncementById({
+        id: targetId,
+      });
     } catch (error) {
-      throw error;
+      return returnException(DeleteAnnouncementResponse, error);
     }
   }
 
@@ -56,7 +101,8 @@ export class AnnouncementController {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
@@ -64,7 +110,9 @@ export class AnnouncementController {
   )
   uploadFile(@UploadedFile() file: any, @Request() req: any) {
     if (!file) {
-      throw new BadRequestException('No file uploaded or invalid file field name. The file must be sent in the "file" field.');
+      throw new BadRequestException(
+        'No file uploaded or invalid file field name. The file must be sent in the "file" field.',
+      );
     }
     const host = req.get('host');
     const protocol = req.protocol || 'http';

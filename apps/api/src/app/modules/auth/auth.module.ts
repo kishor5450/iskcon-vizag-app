@@ -13,7 +13,10 @@ import { DevoteeRepository } from '../../entities/repository';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'hare_krishna_rama_spiritual_jwt_secret_key_2026_vizag'),
+        secret: configService.get<string>(
+          'JWT_SECRET',
+          'hare_krishna_rama_spiritual_jwt_secret_key_2026_vizag',
+        ),
         signOptions: { expiresIn: '7d' },
       }),
       inject: [ConfigService],

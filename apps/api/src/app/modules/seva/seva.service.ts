@@ -1,52 +1,71 @@
-import { Injectable, OnModuleInit, NotFoundException } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { SevaOpportunityRepository } from '../../entities/repository';
 import { SevaOpportunityEntity } from '../../entities/seva-opportunity.entity';
-import { ISevaOpportunity, CreateSevaRequestDto } from '@temple/models';
+import {
+  ISevaOpportunity,
+  CreateSevaRequestDto,
+  ErrorResponse,
+  GetAllSevasRequest,
+  GetAllSevasResponse,
+  CreateSevaResponse,
+  RegisterForSevaByIdRequest,
+  RegisterForSevaResponse,
+} from '@temple/models';
 
 @Injectable()
 export class SevaService implements OnModuleInit {
-  constructor(
-    private readonly sevaRepository: SevaOpportunityRepository
-  ) {}
+  constructor(private readonly sevaRepository: SevaOpportunityRepository) {}
 
   async onModuleInit() {
     await this.seedDefaultSevas();
   }
 
-  async getAllSevas(): Promise<ISevaOpportunity[]> {
-    return this.sevaRepository.getAllSevas();
+  async getAllSevas(req?: GetAllSevasRequest): Promise<GetAllSevasResponse> {
+    const list = await this.sevaRepository.getAllSevas();
+    return new GetAllSevasResponse(
+      true,
+      1100,
+      'Sevas retrieved successfully',
+      list,
+    );
   }
 
-  // Alias for backward compatibility
-  async getAll(): Promise<ISevaOpportunity[]> {
-    return this.getAllSevas();
+  async createSeva(req: CreateSevaRequestDto): Promise<CreateSevaResponse> {
+    if (!req.title || !req.location) {
+      throw new ErrorResponse(1101, 'Title and location are mandatory');
+    }
+    const item = this.sevaRepository.createSeva(req);
+    const saved = await this.sevaRepository.saveSeva(item);
+    return new CreateSevaResponse(
+      true,
+      1102,
+      'Seva opportunity created successfully',
+      saved,
+    );
   }
 
-  async createSeva(dto: CreateSevaRequestDto): Promise<ISevaOpportunity> {
-    const item = this.sevaRepository.createSeva(dto);
-    return this.sevaRepository.saveSeva(item);
-  }
-
-  // Alias for backward compatibility
-  async create(dto: CreateSevaRequestDto): Promise<ISevaOpportunity> {
-    return this.createSeva(dto);
-  }
-
-  async registerForSeva(id: number): Promise<ISevaOpportunity> {
-    const seva = await this.sevaRepository.findById(id);
+  async registerForSevaById(
+    req: RegisterForSevaByIdRequest | number,
+  ): Promise<RegisterForSevaResponse> {
+    const targetId = typeof req === 'number' ? req : req?.id;
+    if (!targetId) {
+      throw new ErrorResponse(1103, 'Seva ID is mandatory');
+    }
+    const seva = await this.sevaRepository.findById(targetId);
     if (!seva) {
-      throw new NotFoundException('Seva opportunity not found');
+      throw new ErrorResponse(1104, 'Seva opportunity not found');
     }
 
     if (seva.registeredDevoteesCount < seva.requiredDevoteesCount) {
       seva.registeredDevoteesCount += 1;
     }
-    return this.sevaRepository.saveSeva(seva);
-  }
-
-  // Alias for backward compatibility
-  async register(id: number): Promise<ISevaOpportunity> {
-    return this.registerForSeva(id);
+    const saved = await this.sevaRepository.saveSeva(seva);
+    return new RegisterForSevaResponse(
+      true,
+      1105,
+      'Registered for seva successfully',
+      saved,
+    );
   }
 
   private async seedDefaultSevas(): Promise<void> {
@@ -56,7 +75,8 @@ export class SevaService implements OnModuleInit {
     const defaults: Partial<SevaOpportunityEntity>[] = [
       {
         title: 'Festival Garland Making',
-        description: 'Prepare beautiful fresh flower garlands for Their Lordships Sri Sri Radha Damodar.',
+        description:
+          'Prepare beautiful fresh flower garlands for Their Lordships Sri Sri Radha Damodar.',
         date: '24 Aug',
         time: '8:00 AM - 12:00 PM',
         location: 'Temple Garland Room',
@@ -66,7 +86,8 @@ export class SevaService implements OnModuleInit {
       },
       {
         title: 'Sunday Prasadam Distribution',
-        description: 'Serving hot, delicious prasadam to visiting devotees and pilgrims.',
+        description:
+          'Serving hot, delicious prasadam to visiting devotees and pilgrims.',
         date: 'This Sunday',
         time: '6:30 PM - 8:30 PM',
         location: 'Prasadam Hall',
@@ -76,7 +97,8 @@ export class SevaService implements OnModuleInit {
       },
       {
         title: 'Janmashtami Temple Decoration Help',
-        description: 'Putting up lights, banners, and mango leaf torans around the temple premises.',
+        description:
+          'Putting up lights, banners, and mango leaf torans around the temple premises.',
         date: '24 Aug',
         time: '2:00 PM - 6:00 PM',
         location: 'Temple Courtyard',
@@ -86,7 +108,8 @@ export class SevaService implements OnModuleInit {
       },
       {
         title: 'Cleanliness Seva (Swachh Mandir)',
-        description: 'Cleaning the main temple courtyard and steps before the festival day.',
+        description:
+          'Cleaning the main temple courtyard and steps before the festival day.',
         date: '23 Aug',
         time: '6:00 AM - 8:00 AM',
         location: 'Temple Exterior',

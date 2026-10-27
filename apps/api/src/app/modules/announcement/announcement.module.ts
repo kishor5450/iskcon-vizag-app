@@ -7,10 +7,7 @@ import { AnnouncementRepository } from '../../entities/repository';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([AnnouncementEntity]),
-    AuthModule,
-  ],
+  imports: [TypeOrmModule.forFeature([AnnouncementEntity]), AuthModule],
   controllers: [AnnouncementController],
   providers: [AnnouncementRepository, AnnouncementService],
   exports: [AnnouncementService, AnnouncementRepository],

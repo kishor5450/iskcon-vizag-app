@@ -1,8 +1,6 @@
 import {
   IDevotee,
   ISadhanaRecord,
-  IAnnouncement,
-  ISevaOpportunity,
   LoginResponseDto,
   RegisterRequestDto,
   LoginRequestDto,
@@ -10,6 +8,12 @@ import {
   SadhanaLogRequestDto,
   CreateAnnouncementRequestDto,
   CreateSevaRequestDto,
+  GetAllAnnouncementsResponse,
+  CreateAnnouncementResponse,
+  DeleteAnnouncementResponse,
+  GetAllSevasResponse,
+  CreateSevaResponse,
+  RegisterForSevaResponse,
 } from '@temple/models';
 import { CommonAxiosService } from '../core';
 import { AuthService } from '../auth';
@@ -48,55 +52,79 @@ export class ApiService extends CommonAxiosService {
   }
 
   // Auth Operations
-  async register(dto: RegisterRequestDto): Promise<IDevotee> {
-    return this.auth.register(dto);
+  async registerDevotee(dto: RegisterRequestDto): Promise<IDevotee> {
+    return this.auth.registerDevotee(dto);
   }
 
-  async login(dto: LoginRequestDto): Promise<LoginResponseDto> {
-    return this.auth.login(dto);
+  async loginDevotee(dto: LoginRequestDto): Promise<LoginResponseDto> {
+    return this.auth.loginDevotee(dto);
   }
 
-  async getProfile(): Promise<IDevotee> {
-    return this.auth.getProfile();
+  async getDevoteeProfile(): Promise<IDevotee> {
+    return this.auth.getDevoteeProfile();
   }
 
-  async updatePreferences(dto: UpdatePreferencesRequestDto): Promise<IDevotee> {
-    return this.auth.updatePreferences(dto);
+  async updateDevoteePreferences(
+    dto: UpdatePreferencesRequestDto,
+  ): Promise<IDevotee> {
+    return this.auth.updateDevoteePreferences(dto);
+  }
+
+  async getAllDevotees(): Promise<IDevotee[]> {
+    return this.auth.getAllDevotees();
+  }
+
+  async updateDevoteeAvatar(avatarUrl: string): Promise<IDevotee> {
+    return this.auth.updateDevoteeAvatar(avatarUrl);
   }
 
   // Sadhana Operations
   async getSadhanaHistory(): Promise<ISadhanaRecord[]> {
-    return this.sadhana.getHistory();
+    return this.sadhana.getSadhanaHistory();
   }
 
-  async getTodaySadhana(date: string): Promise<ISadhanaRecord | null> {
-    return this.sadhana.getTodaySadhana(date);
+  async getTodaySadhanaRecord(date: string): Promise<ISadhanaRecord | null> {
+    return this.sadhana.getTodaySadhanaRecord(date);
   }
 
-  async logSadhana(dto: SadhanaLogRequestDto): Promise<ISadhanaRecord> {
-    return this.sadhana.logSadhana(dto);
+  async logSadhanaRecord(dto: SadhanaLogRequestDto): Promise<ISadhanaRecord> {
+    return this.sadhana.logSadhanaRecord(dto);
+  }
+
+  async getCommunitySadhanaStats() {
+    return this.sadhana.getCommunitySadhanaStats();
   }
 
   // Announcement Operations
-  async getAnnouncements(official?: boolean): Promise<IAnnouncement[]> {
-    return this.announcement.getAll(official);
+  async getAllAnnouncements(
+    official?: boolean,
+  ): Promise<GetAllAnnouncementsResponse> {
+    return this.announcement.getAllAnnouncements({ official });
   }
 
-  async createAnnouncement(dto: CreateAnnouncementRequestDto): Promise<IAnnouncement> {
-    return this.announcement.create(dto);
+  async createAnnouncement(
+    dto: CreateAnnouncementRequestDto,
+  ): Promise<CreateAnnouncementResponse> {
+    return this.announcement.createAnnouncement(dto);
+  }
+
+  async deleteAnnouncementById(
+    id: number,
+  ): Promise<DeleteAnnouncementResponse> {
+    return this.announcement.deleteAnnouncementById(id);
   }
 
   // Seva Operations
-  async getSevas(): Promise<ISevaOpportunity[]> {
-    return this.seva.getAll();
+  async getAllSevas(): Promise<GetAllSevasResponse> {
+    return this.seva.getAllSevas();
   }
 
-  async createSeva(dto: CreateSevaRequestDto): Promise<ISevaOpportunity> {
-    return this.seva.create(dto);
+  async createSeva(dto: CreateSevaRequestDto): Promise<CreateSevaResponse> {
+    return this.seva.createSeva(dto);
   }
 
-  async registerForSeva(id: number): Promise<ISevaOpportunity> {
-    return this.seva.register(id);
+  async registerForSevaById(id: number): Promise<RegisterForSevaResponse> {
+    return this.seva.registerForSevaById(id);
   }
 }
 

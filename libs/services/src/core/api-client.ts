@@ -26,7 +26,7 @@ export class ApiClient {
     path: string,
     method: string,
     body?: any,
-    customHeaders?: Record<string, string>
+    customHeaders?: Record<string, string>,
   ): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

@@ -7,10 +7,7 @@ import { SevaOpportunityRepository } from '../../entities/repository';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([SevaOpportunityEntity]),
-    AuthModule,
-  ],
+  imports: [TypeOrmModule.forFeature([SevaOpportunityEntity]), AuthModule],
   controllers: [SevaController],
   providers: [SevaOpportunityRepository, SevaService],
   exports: [SevaService, SevaOpportunityRepository],
